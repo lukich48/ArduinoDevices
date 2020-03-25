@@ -1,0 +1,47 @@
+{
+    "name": "rc-switch", 
+    "repository": {
+        "url": "https://github.com/sui77/rc-switch.git", 
+        "type": "git"
+    }, 
+    "platforms": [
+        "atmelavr", 
+        "atmelmegaavr", 
+        "atmelsam", 
+        "espressif32", 
+        "espressif8266", 
+        "gd32v", 
+        "infineonxmc", 
+        "intel_arc32", 
+        "kendryte210", 
+        "linux_arm", 
+        "microchippic32", 
+        "nordicnrf51", 
+        "nordicnrf52", 
+        "ststm32", 
+        "ststm8", 
+        "teensy", 
+        "timsp430"
+    ], 
+    "frameworks": [
+        "energia", 
+        "wiringpi", 
+        "arduino"
+    ], 
+    "version": "2.6.3", 
+    "authors": [
+        {
+            "url": null, 
+            "maintainer": false, 
+            "email": null, 
+            "name": "Suat Ozgur"
+        }
+    ], 
+    "keywords": [
+        "wireless", 
+        "rf", 
+        "radio"
+    ], 
+    "id": 246, 
+    "description": "Use your Arduino or Raspberry Pi to operate remote radio controlled devices"
+}
