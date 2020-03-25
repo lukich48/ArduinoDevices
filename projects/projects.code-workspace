@@ -14,6 +14,9 @@
 		},
 		{
 			"path": "LivingroomDht"
+		},
+		{
+			"path": "LivingroomLamp"
 		}
 	],
 	"settings": {}
