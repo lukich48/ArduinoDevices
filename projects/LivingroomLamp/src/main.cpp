@@ -45,12 +45,11 @@ void setup() {
 	Serial.begin(115200);
 	helper.setup();
 
-	button1.levelTrigger = HIGH;
+	button1.levelTrigger = LOW;
 	helper.addButton(&button1);
 
-	button2.levelTrigger = HIGH;
+	button2.levelTrigger = LOW;
 	helper.addButton(&button2);
-
  	mySwitch.enableReceive(5);  // Receiver on interrupt 0 => that is pin #2
 
 }
