@@ -196,7 +196,6 @@ ICACHE_RAM_ATTR void MqttButton::interruptButtton() {
 		else
 			btnPress();
 
-		_flagChange = true;
 	}
 
 	_lockTimer2.restart(); // защищаемся от э/м скачков в реле
@@ -223,6 +222,8 @@ void MqttButton::btnPress()
 	holdStop();
 
 	relaySwitch(state);
+
+	_flagChange = true;
 }
 
 void MqttButton::btnHold(int duration) {
