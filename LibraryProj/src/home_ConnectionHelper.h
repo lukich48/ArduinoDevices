@@ -9,7 +9,7 @@
 #endif
 
 #include "home_ConnectionSettings.h"
-#include "home_MqttButton.h"
+#include "home_Button.h"
 #include "home_Sender.h"
 
 #include <RBD_Timer.h>
@@ -25,7 +25,7 @@ public:
 	ConnectionHelper(ConnectionSettings* settings);
 	void setup();
 	void handle();
-	void addButton(MqttButton* button);
+	void addButton(Button* button);
 
 	Sender sender;
 	ConnectionSettings* settings;
@@ -40,7 +40,7 @@ private:
 
 	RBD::Timer _reconnectTimer;
 
-	static MqttButton* _buttons[];
+	static Button* _buttons[];
 	static byte _buttonsCount;
 	static void attachInterrupt1();
 	static void attachInterrupt2();

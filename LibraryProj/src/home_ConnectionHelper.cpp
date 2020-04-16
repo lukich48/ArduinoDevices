@@ -1,7 +1,7 @@
 
 #include "home_ConnectionHelper.h"
 #include "home_ConnectionSettings.h"
-#include "home_MqttButton.h"
+#include "home_Button.h"
 #include "home_Sender.h"
 
 #include "Arduino.h"
@@ -13,7 +13,7 @@
 #include <string>
 using namespace std;
 
-MqttButton* ConnectionHelper::_buttons[5]; //макимум кнопок
+Button* ConnectionHelper::_buttons[5]; //макимум кнопок
 byte ConnectionHelper::_buttonsCount = 0;
 
 ConnectionHelper::ConnectionHelper(ConnectionSettings* settings)
@@ -136,7 +136,7 @@ void ConnectionHelper::handle() {
 
 }
 
-void ConnectionHelper::addButton(MqttButton* button)
+void ConnectionHelper::addButton(Button* button)
 {
 	_buttonsCount++;
 	_buttons[_buttonsCount-1] = button;

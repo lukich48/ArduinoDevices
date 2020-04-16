@@ -9,32 +9,28 @@
 	#include "WProgram.h"
 #endif
 
+#include "home_Button.h"
 #include "home_Sender.h"
 #include <RBD_Timer.h>
 #include <vector>
 #include <string>
 using namespace std;
 
-class MqttButton {
+class MqttButton: public Button {
 public:
 	MqttButton(byte buttonPin, byte relayPin, string buttonName);
+	void interruptButtton() override;
+	void mqttCallback(char* topic, byte* payload, unsigned int length) override;
+	void setup() override;
+	void handle() override;
+	void setSender(Sender& sender) override;
+	
 	void btnPress();
 	void btnHold(int duration);
-	void interruptButtton();
-	void mqttCallback(char* topic, byte* payload, unsigned int length);
-	void setup();
-	void handle();
 	bool getState();
 	void addTopic(string topic);
-	void setSender(Sender& sender);
-	byte buttonPin = -1; //-1 - нет физической кнопки
 	byte relayPin;
-	string buttonName;
-	bool levelButton = LOW; // —игнал в нормальном состо¤нии на кнопке или датчике касани¤
 	bool levelTrigger = HIGH; //сигнал срабатывани¤ реле
-	string topicSwitch; //команда преключени¤ реле
-	string topicSwitchState; //команда проверки статуса реле
-	string topicSwitchSetup; //настройка кнопки
 	bool isHoldButton; //hold - поведение по умолчанию
 
 	int lockTimout = 30;
