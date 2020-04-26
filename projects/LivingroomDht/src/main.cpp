@@ -6,10 +6,10 @@
 #include "home_ConnectionHelper.h"
 #include <Secret.h>
 
-#include <DHT.h>
+#include <DHT.h> 
 #include <ArduinoJson.h>
 #include <Wire.h>
-#include <Adafruit_Sensor.h>
+#include <SPI.h>
 
 #include <string>
 using namespace std;
@@ -81,6 +81,7 @@ void publishData(float p_temperature, float p_humidity) {
 void setup() {
 	Serial.begin(115200);
 	helper.setup();
+	dht.begin();
 }
 
 // the loop function runs over and over again until power down or reset

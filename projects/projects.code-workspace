@@ -19,5 +19,9 @@
 			"path": "LivingroomLamp"
 		}
 	],
-	"settings": {}
+	"settings": {
+		"files.associations": {
+			"string": "cpp"
+		}
+	}
 }
