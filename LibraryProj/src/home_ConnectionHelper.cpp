@@ -38,7 +38,8 @@ bool ConnectionHelper::wifiConnect()
 
 		if (WiFi.waitForConnectResult() != WL_CONNECTED)
 			return false;
-		Serial.println("WiFi connected");
+		Serial.print("IP address: ");
+		Serial.println(WiFi.localIP());
 	}
 
 	return true;
@@ -57,7 +58,7 @@ bool ConnectionHelper::mqttConnect()
 		{
 			Serial.println("connected");
 			// Once connected, publish an announcement...
-			mqttClient.publish("Start", settings->deviceName.c_str());
+			mqttClient.publish("start", (settings->deviceName + " " + WiFi.localIP().toString().c_str()).c_str());
 			// ... and resubscribe
 			mqttClient.subscribe(topicSubscribe.c_str()); // подписываемся на топики для этого устройства
 		}

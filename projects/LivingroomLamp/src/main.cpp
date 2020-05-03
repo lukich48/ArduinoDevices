@@ -36,7 +36,7 @@ MqttButton button2(-1, 13, "cold");
 
 unsigned long  rfButton1 = 3931160; //turn on all buttons
 unsigned long  rfButton2 = 3931154; //turn on button1
-RBD::Timer _lockTimer(250);
+RBD::Timer _lockTimer(500);
 
 RCSwitch mySwitch = RCSwitch();
 

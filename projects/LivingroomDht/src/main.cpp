@@ -1,6 +1,5 @@
 /*	WeMos D1 R2 & mini
 	Датчик температуры и влажности в гостинной
-	!!!Работает с устаревшими библиотеками DHT!!! 
 */
 #include "home_ConnectionSettings.h"
 #include "home_ConnectionHelper.h"
@@ -77,14 +76,12 @@ void publishData(float p_temperature, float p_humidity) {
 	helper.sender.publish(settings.topicBase + "/" + settings.deviceName, data, true);
 }
 
-// the setup function runs once when you press reset or power the board
 void setup() {
 	Serial.begin(115200);
 	helper.setup();
 	dht.begin();
 }
 
-// the loop function runs over and over again until power down or reset
 void loop() {
 	helper.handle();
 
