@@ -25,13 +25,11 @@
     "frameworks": [
         "arduino"
     ], 
-    "version": "6.14.1", 
+    "version": "6.15.1", 
     "export": {
         "exclude": [
-            "fuzzing", 
-            "scripts", 
-            "test", 
-            "third-party"
+            ".github", 
+            "extras"
         ]
     }, 
     "authors": [
@@ -50,5 +48,5 @@
     ], 
     "homepage": "https://arduinojson.org/?utm_source=meta&utm_medium=library.json", 
     "id": 64, 
-    "description": "An elegant and efficient JSON library for embedded systems"
+    "description": "A simple and efficient JSON library for embedded C++. ArduinoJson supports \u2714 serialization, \u2714 deserialization, \u2714 MessagePack, \u2714 fixed allocation, \u2714 zero-copy, \u2714 streams, \u2714 filtering, and more. It is the most popular Arduino library on GitHub \u2764\u2764\u2764\u2764\u2764. Check out arduinojson.org for a comprehensive documentation."
 }
