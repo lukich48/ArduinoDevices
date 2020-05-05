@@ -1,0 +1,33 @@
+{
+	"folders": [
+		{
+			"path": "projects/BathroomSwitch"
+		},
+		{
+			"path": "projects/HallSwitch"
+		},
+		{
+			"path": "projects/KitchenSwitch"
+		},
+		{
+			"path": "projects/KitchenSwitch2"
+		},
+		{
+			"path": "projects/LivingroomDht"
+		},
+		{
+			"path": "projects/LivingroomLamp"
+		},
+		{
+			"path": "beta/DHT_Unified_Sensor"
+		},
+		{
+			"path": "LibraryProj"
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"string": "cpp"
+		}
+	}
+}

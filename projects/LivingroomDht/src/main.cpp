@@ -5,7 +5,7 @@
 #include "home_ConnectionHelper.h"
 #include <Secret.h>
 
-#include <DHT.h> 
+#include <DHT_U.h>
 #include <ArduinoJson.h>
 #include <Wire.h>
 #include <SPI.h>
@@ -33,11 +33,12 @@ ConnectionSettings settings(
 
 ConnectionHelper helper(&settings);
 
-DHT dht(5, DHT22);
+DHT_Unified dht(5, DHT22);
 const int sleepingTimeSecond = 120; //сколько спать
 RBD::Timer reconnectTimer(sleepingTimeSecond * 1000);
 const int bufCount = 5;
 const bool debug = false;
+uint32_t delayMS;
 
 void sort(float a[])
 {
@@ -65,12 +66,6 @@ void publishData(float p_temperature, float p_humidity) {
 	doc["temperature"] = (String)p_temperature;
 	doc["humidity"] = (String)p_humidity;
 
-	/*
-	{
-	"temperature": "23.20" ,
-	"humidity": "43.70"
-	}
-	*/
 	char data[200];
 	serializeJson(doc, data);
 	helper.sender.publish(settings.topicBase + "/" + settings.deviceName, data, true);
@@ -80,6 +75,10 @@ void setup() {
 	Serial.begin(115200);
 	helper.setup();
 	dht.begin();
+
+	sensor_t sensor;
+	dht.humidity().getSensor(&sensor);
+	delayMS = sensor.min_delay / 1000;
 }
 
 void loop() {
@@ -87,35 +86,45 @@ void loop() {
 
 	if (reconnectTimer.isExpired())
 	{
-		int i = bufCount;
 		float* tbuf = new float[bufCount];
 		float* hbuf = new float[bufCount];
 
-		while (i > 0)
+		int i = 0;
+		while (i < bufCount)
 		{
-			delay(1000);
-			// Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
-			float h = dht.readHumidity();
-			// Read temperature as Celsius (the default)
-			float t = dht.readTemperature();
+			delay(delayMS);
 
-			if (isnan(h) || isnan(t))
-			{
-				Serial.println("ERROR: Failed to read from DHT sensor!");
+			sensors_event_t event;
+			dht.temperature().getEvent(&event);
+			if (isnan(event.temperature)) {
+				Serial.println(F("Error reading temperature!"));
 				continue;
 			}
-			else
-			{
-				i--;
-				tbuf[i] = t;
-				hbuf[i] = h;
+			else {
+				if(debug)
+				{
+					Serial.print(F("Temperature: "));
+					Serial.print(event.temperature);
+					Serial.println(F("°C"));
+				}
+				tbuf[i] = event.temperature;
+			}
+
+			dht.humidity().getEvent(&event);
+			if (isnan(event.relative_humidity)) {
+				Serial.println(F("Error reading humidity!"));
+				continue;
+			}
+			else {
 				if (debug)
 				{
-					Serial.println(h);
-					Serial.println(t);
+					Serial.print(F("Humidity: "));
+					Serial.print(event.relative_humidity);
+					Serial.println(F("%"));
 				}
-
-			}
+				hbuf[i] = event.relative_humidity;
+			}	
+			i++;
 		}
 
 		sort(tbuf);
