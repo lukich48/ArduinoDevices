@@ -23,6 +23,9 @@
 		},
 		{
 			"path": "LibraryProj"
+		},
+		{
+			"path": "beta/bathroomSwitchDHT"
 		}
 	],
 	"settings": {

@@ -5,15 +5,15 @@
 #include "home_ConnectionHelper.h"
 #include <Secret.h>
 
-#include <DHT_U.h>
 #include <ArduinoJson.h>
+#include <DHT_U.h>
 #include <Wire.h>
 #include <SPI.h>
 
 #include <string>
 using namespace std;
 
-//***Блок переменных
+//connection variables
 const char* ssid = WI_FI_SSID;
 const char* wifiPass = WI_FI_PASSWORD;
 const char* mqttServer = MQTT_SERVER;
@@ -34,8 +34,7 @@ ConnectionSettings settings(
 ConnectionHelper helper(&settings);
 
 DHT_Unified dht(5, DHT22);
-const int sleepingTimeSecond = 120; //сколько спать
-RBD::Timer reconnectTimer(sleepingTimeSecond * 1000);
+RBD::Timer reconnectTimer(120 * 1000);
 const uint8_t bufCount = 7;
 float tbuf[bufCount];
 float hbuf[bufCount];
@@ -65,7 +64,6 @@ void sort(float a[])
 void publishData(float p_temperature, float p_humidity) {
 	// create a JSON object
 	// doc : https://github.com/bblanchon/ArduinoJson/wiki/API%20Reference
-	//deserialize json
 	StaticJsonDocument<200> doc;
 	doc["temperature"] = (String)p_temperature;
 	doc["humidity"] = (String)p_humidity;
@@ -109,20 +107,8 @@ void getSensorData(){
     }	
 }
 
-void setup() {
-	Serial.begin(115200);
-	helper.setup();
-	dht.begin();
-
-	sensor_t sensor;
-	dht.humidity().getSensor(&sensor);
-	delayMS = sensor.min_delay / 1000;
-  delayTimer.setTimeout(delayMS);
-}
-
-void loop() {
-	helper.handle();
-
+void dhtLoop()
+{
 	if (reconnectTimer.isExpired())
 	{
 		if(delayTimer.isExpired())
@@ -147,4 +133,26 @@ void loop() {
 			}
 		}
 	}
+}
+
+void dhtSetup(){
+	dht.begin();
+
+	sensor_t sensor;
+	dht.humidity().getSensor(&sensor);
+	delayMS = sensor.min_delay / 1000;
+  delayTimer.setTimeout(delayMS);
+}
+
+void setup() {
+	Serial.begin(115200);
+	helper.setup();
+
+	dhtSetup();
+}
+
+void loop() {
+	helper.handle();
+
+	dhtLoop();
 }
