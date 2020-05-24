@@ -34,8 +34,9 @@ ConnectionHelper helper(&settings);
 MqttButton button1(-1, 12, "warm");
 MqttButton button2(-1, 13, "cold");
 
-unsigned long  rfButton1 = 3931160; //turn on all buttons
 unsigned long  rfButton2 = 3931154; //turn on button1
+unsigned long  rfButton1 = 3931160; //turn on all buttons
+
 RBD::Timer _lockTimer(500);
 
 RCSwitch mySwitch = RCSwitch();
@@ -59,7 +60,7 @@ void loop() {
 	helper.handle();
 
 	if (mySwitch.available()) {  
-		if (mySwitch.getReceivedValue() == rfButton1){
+		if (mySwitch.getReceivedValue() == rfButton2){
 			if(_lockTimer.isExpired()){
 				//если хотя бы один выключен
 				if(button1.getState() == LOW || button2.getState() == LOW ){
@@ -78,7 +79,7 @@ void loop() {
 				_lockTimer.restart();
 			}
 		}
-		else if(mySwitch.getReceivedValue() == rfButton2){
+		else if(mySwitch.getReceivedValue() == rfButton1){
 			if(_lockTimer.isExpired()){
 				if(button2.getState() == HIGH ){
 					button2.btnPress();
