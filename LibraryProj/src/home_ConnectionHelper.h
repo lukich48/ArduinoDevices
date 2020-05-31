@@ -1,12 +1,5 @@
-
-#ifndef _ConnectionHelper_h
-#define _ConnectionHelper_h
-
-#if defined(ARDUINO) && ARDUINO >= 100
-	#include "arduino.h"
-#else
-	#include "WProgram.h"
-#endif
+#pragma once
+#include "arduino.h"
 
 #include "home_ConnectionSettings.h"
 #include "home_Button.h"
@@ -51,6 +44,4 @@ private:
 
 };
 
-
-#endif
 

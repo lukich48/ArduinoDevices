@@ -1,13 +1,5 @@
-// MqttButton.h
-
-#ifndef _MQTTBUTTON_h
-#define _MQTTBUTTON_h
-
-#if defined(ARDUINO) && ARDUINO >= 100
-	#include "arduino.h"
-#else
-	#include "WProgram.h"
-#endif
+#pragma once
+#include "arduino.h"
 
 #include "home_Button.h"
 #include "home_Sender.h"
@@ -40,7 +32,6 @@ public:
 private:
 	volatile boolean _lock = false;
 	vector<string> _publishTopics;
-	Sender* _sender;
 
 	volatile boolean _flagChange = false; // ‘лаг нужен дл¤ того, чтобы опубликовать сообщение на брокер
 	void relaySwitch(bool state);
@@ -58,6 +49,3 @@ private:
 	void holdStart();
 	void holdStop();
 };
-
-#endif
-

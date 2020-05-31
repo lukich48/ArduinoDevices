@@ -1,13 +1,5 @@
-// ConnectionSettings.h
-
-#ifndef _CONNECTIONSETTINGS_h
-#define _CONNECTIONSETTINGS_h
-
-#if defined(ARDUINO) && ARDUINO >= 100
-	#include "arduino.h"
-#else
-	#include "WProgram.h"
-#endif
+#pragma once
+#include "arduino.h"
 
 #include <string>
 using namespace std;
@@ -26,5 +18,4 @@ public:
 	string topicBase = "home";
 };
 
-#endif
 

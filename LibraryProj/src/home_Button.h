@@ -1,12 +1,6 @@
-// Button.h
 
 #pragma once
-
-#if defined(ARDUINO) && ARDUINO >= 100
-	#include "arduino.h"
-#else
-	#include "WProgram.h"
-#endif
+#include "arduino.h"
 
 #include "home_Sender.h"
 
@@ -25,5 +19,7 @@ public:
     byte buttonPin = -1; //-1 - нет физической кнопки
     bool levelButton = LOW; // —игнал в нормальном состо¤нии на кнопке или датчике касани¤
 
+protected:
+    Sender* _sender;
 
 };

@@ -4,6 +4,7 @@
 #include "home_ConnectionSettings.h"
 #include "home_ConnectionHelper.h"
 #include "home_MqttButton.h"
+#include "home_DhtSensor.h"
 #include <Secret.h>
 
 #include <string>
@@ -32,8 +33,8 @@ ConnectionHelper helper(&settings);
 MqttButton button1(-1, 14, "warmfloor");
 MqttButton button2(2, 12, "lamp");
 
+DhtSensor dhtSensor(5,DHT22,settings.topicBase + "/hall/dht");
 
-// the setup function runs once when you press reset or power the board
 void setup() {
 	Serial.begin(115200);
 	helper.setup();
@@ -44,9 +45,12 @@ void setup() {
 	button2.levelTrigger = LOW;
 	button2.levelButton = HIGH;
 	helper.addButton(&button2);
+
+	dhtSensor.setup(helper.sender);
 }
 
-// the loop function runs over and over again until power down or reset
 void loop() {
 	helper.handle();
+
+	dhtSensor.handle();
 }
