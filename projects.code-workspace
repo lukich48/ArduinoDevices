@@ -13,16 +13,10 @@
 			"path": "projects/KitchenSwitch2"
 		},
 		{
-			"path": "projects/LivingroomDht"
-		},
-		{
 			"path": "projects/LivingroomLamp"
 		},
 		{
 			"path": "LibraryProj"
-		},
-		{
-			"path": "beta/bathroomSwitchDHT"
 		}
 	],
 	"settings": {
