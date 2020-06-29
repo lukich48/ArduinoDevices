@@ -1,32 +1,29 @@
 {
-    "name": "RBD_Timer", 
-    "version": "1.3.0", 
-    "keywords": [
-        "timing"
-    ], 
     "description": "Manage many timed events.", 
-    "frameworks": [
-        "arduino"
-    ], 
-    "platforms": [
-        "atmelavr", 
-        "espressif8266"
-    ], 
-    "authors": [
-        {
-            "email": "alex.taujenis@gmail.com", 
-            "url": null, 
-            "maintainer": true, 
-            "name": "Alex Taujenis"
-        }
-    ], 
     "repository": {
-        "type": "git", 
-        "url": "https://github.com/alextaujenis/RBD_Timer"
+        "url": "https://github.com/alextaujenis/RBD_Timer", 
+        "type": "git"
     }, 
-    "homepage": null, 
+    "platforms": [
+        "asrmicro650x", 
+        "atmelavr", 
+        "atmelmegaavr", 
+        "atmelsam", 
+        "espressif32", 
+        "espressif8266", 
+        "gd32v", 
+        "infineonxmc", 
+        "intel_arc32", 
+        "kendryte210", 
+        "microchippic32", 
+        "nordicnrf51", 
+        "nordicnrf52", 
+        "ststm32", 
+        "ststm8", 
+        "teensy", 
+        "timsp430"
+    ], 
     "export": {
-        "include": null, 
         "exclude": [
             "extras", 
             "docs", 
@@ -34,7 +31,25 @@
             "test", 
             "*.doxyfile", 
             "*.pdf"
-        ]
+        ], 
+        "include": null
     }, 
-    "id": 478
+    "authors": [
+        {
+            "maintainer": true, 
+            "name": "Alex Taujenis", 
+            "url": null, 
+            "email": "alex.taujenis@gmail.com"
+        }
+    ], 
+    "keywords": [
+        "timing"
+    ], 
+    "id": 478, 
+    "name": "RBD_Timer", 
+    "frameworks": [
+        "arduino"
+    ], 
+    "version": "1.3.2", 
+    "homepage": null
 }
