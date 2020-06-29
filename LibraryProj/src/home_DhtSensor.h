@@ -19,6 +19,8 @@ public:
     string commandTopic;
     int reconnectTimeout = 120 * 1000;
     bool debug;
+    float humidityOffset = 0; //offset of reference value  
+    float temperatureOffset = 0; //offset of reference value  
 
 private:
     void sort(float a[]);

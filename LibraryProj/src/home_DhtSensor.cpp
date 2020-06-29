@@ -55,7 +55,6 @@ void DhtSensor::handle()
 	}
 }
 
-
 void DhtSensor::sort(float a[])
 {
 	float temp = 0;
@@ -100,7 +99,7 @@ void DhtSensor::getSensorData(){
         Serial.print(event.temperature);
         Serial.println(F("°C"));
       }
-      tbuf[i] = event.temperature;
+      tbuf[i] = event.temperature + temperatureOffset;
     }
 
     dht.humidity().getEvent(&event);
@@ -115,7 +114,7 @@ void DhtSensor::getSensorData(){
         Serial.print(event.relative_humidity);
         Serial.println(F("%"));
       }
-      hbuf[i] = event.relative_humidity;
+      hbuf[i] = event.relative_humidity + humidityOffset;
     }	
 }
 

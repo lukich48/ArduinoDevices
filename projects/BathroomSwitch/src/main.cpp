@@ -42,7 +42,6 @@ MqttButton button3(4, 5, "fan");
 
 DhtSensor dhtSensor(2,DHT22,settings.topicBase + "/bathroom/dht");
 
-
 void setup() {
 	Serial.begin(115200);
 	helper.setup();
@@ -60,6 +59,7 @@ void setup() {
 	button3.holdTimeout = 10*60*1000;
 	helper.addButton(&button3);
 
+	// dhtSensor.humidityOffset = 2.0;
 	dhtSensor.setup(helper.sender);
 
 }

@@ -25,7 +25,7 @@ public:
 	bool levelTrigger = HIGH; //сигнал срабатывани¤ реле
 	bool isHoldButton; //hold - поведение по умолчанию
 
-	int lockTimout = 30;
+	int lockTimout = 70;
 	int lockTimout2 = 90;
 	int holdTimeout = 10000;
 
