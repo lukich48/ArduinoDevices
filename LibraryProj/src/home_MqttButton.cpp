@@ -7,6 +7,10 @@
 		home/testproj/btn1 {"action":"off"}
 	hold 10 sec:
 		home/testproj/btn1 {"action":"hold", "duration":10000}
+
+	subscriptions:
+		home/testproj/btn1/state 0
+		home/testproj/btn1/state/manual 0
 */
 
 //#include "Arduino.h"
@@ -48,6 +52,7 @@ void MqttButton::handle()
 
 		//состояние кнопки
 		_sender->publish(topicSwitchState, curState, true);
+		_sender->publish(topicSwitchState + "/manual", curState, false);
 
 		//отсылаем все топики
 		for (int i = 0; i < _publishTopics.size(); i++)
@@ -132,7 +137,12 @@ void MqttButton::onTopicSwitch(byte* payload, unsigned int length)
 		else if (strcmp(action, "hold") == 0)
 		{
 			long duration = doc["duration"]>0? doc["duration"]: holdTimeout;
-			btnHold(duration);
+
+			relaySwitch(true);
+
+			_holdTimer.setTimeout(duration);
+			_holdTimer.restart();
+			_flagHold = true;
 		}
 	}
 
@@ -261,6 +271,7 @@ void MqttButton::holdStart()
 {
 	_holdTimer.restart();
 	_flagHold = true;
+	_flagChange = true;
 
 }
 
