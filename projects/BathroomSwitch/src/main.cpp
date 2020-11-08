@@ -48,6 +48,8 @@ void setup() {
 
 	button1.levelButton = HIGH;
 	button1.levelTrigger = LOW;
+	button1.isHoldButton = true;
+	button1.holdTimeout = 10*60*1000;
 	helper.addButton(&button1);
 
 	button2.levelTrigger = LOW;
