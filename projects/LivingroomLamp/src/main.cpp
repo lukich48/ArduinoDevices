@@ -1,5 +1,5 @@
 /*	WeMos D1 R2 & mini
-	свет в ванной над зеркалом
+	свет в зале
 */
 #include "home_ConnectionSettings.h"
 #include "home_ConnectionHelper.h"
@@ -11,7 +11,6 @@
 #include <string>
 using namespace std;
 
-//***Блок переменных
 const char* ssid = WI_FI_SSID;
 const char* wifiPass = WI_FI_PASSWORD;
 const char* mqttServer = MQTT_SERVER;
