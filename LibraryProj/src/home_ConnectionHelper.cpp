@@ -11,10 +11,10 @@
 #include <ArduinoOTA.h>
 
 #include <string>
-using namespace std;
+using std::string;
 
 Button* ConnectionHelper::_buttons[5]; //макимум кнопок
-byte ConnectionHelper::_buttonsCount = 0;
+uint8_t ConnectionHelper::_buttonsCount = 0;
 
 ConnectionHelper::ConnectionHelper(ConnectionSettings* settings)
 	:wclient(), mqttClient(settings->mqttServer, settings->mqttPort, wclient),
@@ -81,7 +81,7 @@ void ConnectionHelper::setup()
 	_reconnectTimer.setTimeout(reconnectTimeout);
 
 	//подписываем callback таким вот хитрым способом
-	MQTT_CALLBACK_SIGNATURE([this](char* topic, byte* payload, unsigned int length)	{
+	MQTT_CALLBACK_SIGNATURE([this](char* topic, uint8_t* payload, unsigned int length)	{
 		Serial.print("arrived: [");
 		Serial.print(topic);
 		Serial.print("] ");
@@ -91,7 +91,7 @@ void ConnectionHelper::setup()
 		Serial.println();
 
 		//передаем message в каждую кнопку
-		for (byte i = 0; i < _buttonsCount; i++)
+		for (uint8_t i = 0; i < _buttonsCount; i++)
 		{
 			_buttons[i]->mqttCallback(topic,payload,length);
 		}
@@ -130,7 +130,7 @@ void ConnectionHelper::handle() {
 	}
 
 	//цикл для каждой кнопки
-	for (byte i = 0; i < _buttonsCount; i++)
+	for (uint8_t i = 0; i < _buttonsCount; i++)
 	{
 		_buttons[i]->handle();
 	}

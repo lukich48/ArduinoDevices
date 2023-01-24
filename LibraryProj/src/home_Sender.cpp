@@ -3,7 +3,7 @@
 #include <PubSubClient.h>
 
 #include <string>
-using namespace std;
+using std::string;
 
 Sender::Sender(PubSubClient& mqttClient)
 {

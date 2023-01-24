@@ -14,7 +14,6 @@
 #include <SPI.h>
 
 #include <string>
-using namespace std;
 
 //connection variables
 const char* ssid = WI_FI_SSID;

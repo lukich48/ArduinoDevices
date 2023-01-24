@@ -21,9 +21,9 @@
 #include <vector>
 #include <string>
 #include <ArduinoJson.h>
-using namespace std;
+using std::string;
 
-MqttButton::MqttButton(byte buttonPin, byte relayPin, string buttonName)
+MqttButton::MqttButton(uint8_t buttonPin, uint8_t relayPin, string buttonName)
 {
 	this->buttonPin = buttonPin;
 	this->relayPin = relayPin;
@@ -76,7 +76,7 @@ void MqttButton::handle()
 	}
 }
 
-void MqttButton::mqttCallback(char* topic, byte* payload, unsigned int length)
+void MqttButton::mqttCallback(char* topic, uint8_t* payload, unsigned int length)
 {
 	if (strcmp(topic, topicSwitch.c_str()) == 0)
 	{
@@ -92,7 +92,7 @@ void MqttButton::mqttCallback(char* topic, byte* payload, unsigned int length)
 	}
 }
 
-void MqttButton::onTopicSwitch(byte* payload, unsigned int length)
+void MqttButton::onTopicSwitch(uint8_t* payload, unsigned int length)
 {
 	//simple request
 	if (length == 1) {
@@ -149,7 +149,7 @@ void MqttButton::onTopicSwitch(byte* payload, unsigned int length)
 	_sender->publish(topicSwitchState, getState(), true);
 }
 
-void MqttButton::onTopicSwitchState(byte* payload, unsigned int length)
+void MqttButton::onTopicSwitchState(uint8_t* payload, unsigned int length)
 {
 	bool val = false;
 	if (payload[0] == '1')
@@ -163,7 +163,7 @@ void MqttButton::onTopicSwitchState(byte* payload, unsigned int length)
 		_sender->publish(topicSwitchState, curState, true);
 }
 
-void MqttButton::onTopicSwitchSetup(byte* payload, unsigned int length)
+void MqttButton::onTopicSwitchSetup(uint8_t* payload, unsigned int length)
 {
 	//deserialize json
 	StaticJsonDocument<200> doc;

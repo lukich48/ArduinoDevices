@@ -9,7 +9,6 @@
 #include <RCSwitch.h>
 
 #include <string>
-using namespace std;
 
 const char* ssid = WI_FI_SSID;
 const char* wifiPass = WI_FI_PASSWORD;

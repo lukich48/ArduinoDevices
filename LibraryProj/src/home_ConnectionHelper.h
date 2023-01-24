@@ -9,9 +9,8 @@
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
 
-
 #include <string>
-using namespace std;
+using std::string;
 
 class ConnectionHelper {
 public:
@@ -34,7 +33,7 @@ private:
 	RBD::Timer _reconnectTimer;
 
 	static Button* _buttons[];
-	static byte _buttonsCount;
+	static uint8_t _buttonsCount;
 	static void attachInterrupt1();
 	static void attachInterrupt2();
 	static void attachInterrupt3();

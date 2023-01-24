@@ -6,13 +6,13 @@
 #include <RBD_Timer.h>
 #include <vector>
 #include <string>
-using namespace std;
+using std::string;
 
 class MqttButton: public Button {
 public:
-	MqttButton(byte buttonPin, byte relayPin, string buttonName);
+	MqttButton(uint8_t buttonPin, uint8_t relayPin, string buttonName);
 	void interruptButtton() override;
-	void mqttCallback(char* topic, byte* payload, unsigned int length) override;
+	void mqttCallback(char* topic, uint8_t* payload, unsigned int length) override;
 	void setup() override;
 	void handle() override;
 	void setSender(Sender& sender) override;
@@ -21,7 +21,7 @@ public:
 	void btnHold(int duration);
 	bool getState();
 	void addTopic(string topic);
-	byte relayPin;
+	uint8_t relayPin;
 	bool levelTrigger = HIGH; //сигнал срабатывани¤ реле
 	bool isHoldButton; //hold - поведение по умолчанию
 
@@ -31,7 +31,7 @@ public:
 
 private:
 	volatile boolean _lock = false;
-	vector<string> _publishTopics;
+	std::vector<string> _publishTopics;
 
 	volatile boolean _flagChange = false; // ‘лаг нужен дл¤ того, чтобы опубликовать сообщение на брокер
 	void relaySwitch(bool state);
@@ -42,9 +42,9 @@ private:
 	RBD::Timer _holdTimer; // удержание кнопки
 	boolean _flagHold;
 
-	void onTopicSwitch(byte* payload, unsigned int length);
-	void onTopicSwitchState(byte* payload, unsigned int length);
-	void onTopicSwitchSetup(byte* payload, unsigned int length);
+	void onTopicSwitch(uint8_t* payload, unsigned int length);
+	void onTopicSwitchState(uint8_t* payload, unsigned int length);
+	void onTopicSwitchSetup(uint8_t* payload, unsigned int length);
 
 	void holdStart();
 	void holdStop();

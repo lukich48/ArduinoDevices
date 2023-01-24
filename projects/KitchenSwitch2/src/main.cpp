@@ -7,7 +7,6 @@
 #include <Secret.h>
 
 #include <string>
-using namespace std;
 
 //***Блок переменных
 const char* ssid = WI_FI_SSID;

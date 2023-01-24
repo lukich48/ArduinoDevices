@@ -1,13 +1,12 @@
-
 #include "home_DhtSensor.h"
 #include "home_Sender.h"
 
 #include <RBD_Timer.h>
 #include <string>
 #include <ArduinoJson.h>
-using namespace std;
+using std::string;
 
-DhtSensor::DhtSensor(byte dhtPin, byte dhtType, string commandTopic)
+DhtSensor::DhtSensor(uint8_t dhtPin, uint8_t dhtType, string commandTopic)
 	:dht(dhtPin, dhtType)
 {
 	this->commandTopic = commandTopic;
@@ -45,8 +44,8 @@ void DhtSensor::handle()
 
 			publishData(tbuf[bufCount / 2], hbuf[bufCount / 2]);
 
-			fill_n(tbuf, bufCount, 0);
-			fill_n(hbuf, bufCount, 0);
+			std::fill_n(tbuf, bufCount, 0);
+			std::fill_n(hbuf, bufCount, 0);
 
 			i=0;
 			reconnectTimer.restart();

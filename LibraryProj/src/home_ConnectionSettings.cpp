@@ -5,7 +5,7 @@ Dto с настройками
 #include "home_ConnectionSettings.h"
 #include "Arduino.h"
 #include <string>
-using namespace std;
+using std::string;
 
 ConnectionSettings::ConnectionSettings(	const char* ssid, 
 	const char* wifiPass, 

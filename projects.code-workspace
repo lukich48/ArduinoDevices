@@ -17,12 +17,19 @@
 		},
 		{
 			"path": "LibraryProj"
+		},
+		{
+			"path": "projects/MagicLamp"
+		},
+		{
+			"path": "lib"
 		}
 	],
 	"settings": {
 		"files.associations": {
 			"string": "cpp",
-			"*.tcc": "cpp"
+			"*.tcc": "cpp",
+			"cstddef": "cpp"
 		}
 	}
 }

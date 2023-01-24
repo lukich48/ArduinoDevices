@@ -4,7 +4,7 @@
 #include <PubSubClient.h>
 
 #include <string>
-using namespace std;
+using std::string;
 
 class Sender
 {

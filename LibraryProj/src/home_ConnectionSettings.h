@@ -2,7 +2,8 @@
 #include "arduino.h"
 
 #include <string>
-using namespace std;
+using std::string;
+
 class ConnectionSettings
 {
 public:

@@ -7,11 +7,11 @@
 #include <DHT_U.h>
 #include <Wire.h>
 #include <SPI.h>
-using namespace std;
+using std::string;
 
 class DhtSensor{
 public:
-    DhtSensor(byte dhtPin, byte dhtType, string commandTopic);
+    DhtSensor(uint8_t dhtPin, uint8_t dhtType, string commandTopic);
     void setup(Sender& sender);
     void handle();
 
