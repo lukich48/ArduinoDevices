@@ -1,6 +1,9 @@
 #include "home_DhtSensor.h"
 #include "home_Sender.h"
 
+#include <ESP8266WiFi.h>
+#include <ArduinoOTA.h>
+
 #include <RBD_Timer.h>
 #include <string>
 #include <ArduinoJson.h>

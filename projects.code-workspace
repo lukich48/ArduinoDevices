@@ -13,16 +13,19 @@
 			"path": "projects/KitchenSwitch2"
 		},
 		{
-			"path": "projects/LivingroomLamp"
-		},
-		{
-			"path": "LibraryProj"
-		},
-		{
 			"path": "projects/MagicLamp"
 		},
 		{
 			"path": "lib"
+		},
+		{
+			"path": "common/LibraryProj"
+		},
+		{
+			"path": "common/MqttButton"
+		},
+		{
+			"path": "common/DhtSensor"
 		}
 	],
 	"settings": {

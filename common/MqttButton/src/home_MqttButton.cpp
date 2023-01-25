@@ -13,9 +13,11 @@
 		home/testproj/btn1/state/manual 0
 */
 
-//#include "Arduino.h"
 #include "home_MqttButton.h"
 #include "home_Sender.h"
+
+#include <ESP8266WiFi.h>
+#include <ArduinoOTA.h>
 
 #include <RBD_Timer.h>
 #include <vector>

@@ -7,6 +7,17 @@
 #include <Wire.h>
 #include <string>
 
+#include "home_ConnectionSettings.h"
+#include "home_ConnectionHelper.h"
+#include <Secret.h>
+
+const char* ssid = WI_FI_SSID;
+const char* wifiPass = WI_FI_PASSWORD;
+const char* mqttServer = MQTT_SERVER;
+const int mqttPort = MQTT_PORT;
+const char* mqttUser = MQTT_USER;
+const char* mqttPass = MQTT_PASSWORD;
+
 #define HC_ECHO 4       // пин Echo
 #define HC_TRIG 5       // пин Trig
 
@@ -37,6 +48,18 @@ Data data;
 EEManager mem(data);
 
 int prev_br;
+
+ConnectionSettings settings(
+	ssid,
+	wifiPass,
+	mqttServer,
+	mqttPort,
+	mqttUser,
+	mqttPass,
+	"ardbeg/magiclamp"
+);
+
+ConnectionHelper helper(&settings);
 
 void print(std::string message)
 {
@@ -205,9 +228,13 @@ void setup() {
 
   mem.begin(0, 'a');  // запуск и чтение настроек
   applyMode();        // применить режим
+
+  helper.setup();
 }
 
 void loop() {
+  helper.handle();
+
   mem.tick();   // менеджер памяти
   if (data.state && data.mode == 2) fireTick();   // анимация огня
 
