@@ -11,6 +11,8 @@
 #include "home_ConnectionHelper.h"
 #include <Secret.h>
 
+using std::string;
+
 const char* ssid = WI_FI_SSID;
 const char* wifiPass = WI_FI_PASSWORD;
 const char* mqttServer = MQTT_SERVER;
@@ -23,10 +25,10 @@ const char* mqttPass = MQTT_PASSWORD;
 
 #define LED_DATA_PIN 13      // пин ленты
 #define LED_CLOCK_PIN 14
-#define LED_NUM 15      // к-во светодиодов
+#define LED_NUM 30      // к-во светодиодов
 
 #define VB_DEB 0        // отключаем антидребезг (он есть у фильтра)
-#define VB_CLICK 900    // таймаут клика
+#define VB_CLICK 700    // таймаут клика
 #include <VirtualButton.h>
 VButton gest;
 
@@ -61,13 +63,13 @@ ConnectionSettings settings(
 
 ConnectionHelper helper(&settings);
 
-void print(std::string message)
+void print(string message)
 {
 	Serial.println(message.c_str());
 }
 
 // получение расстояния с дальномера
-#define HC_MAX_LEN 1000L  // макс. расстояние измерения, мм
+#define HC_MAX_LEN 700L  // макс. расстояние измерения, мм
 int getDist(byte trig, byte echo) {
   digitalWrite(trig, HIGH);
   delayMicroseconds(10);
@@ -133,7 +135,7 @@ void applyMode() {
     strip.fill(color, 0, 0);
     strip.show();
 
-      print(std::string("applyMode: ") + std::to_string(data.mode) 
+      print(string("applyMode: ") + std::to_string(data.mode) 
         + " hue: " + std::to_string(data.hue[data.mode])
         + " sat: " + std::to_string(data.sat[data.mode])
         + " bright: " + std::to_string(data.bright[data.mode])
@@ -147,7 +149,7 @@ void applyMode() {
         // led.setBrightness(prev_br);
         strip.setBrightness(prev_br);
         strip.show();
-        print(std::string("setBrightness1: " + std::to_string(prev_br)));
+        print(string("setBrightness1: " + std::to_string(prev_br)));
         delay(10);
       }
       prev_br = data.bright[data.mode];
@@ -160,7 +162,7 @@ void applyMode() {
       // led.setBrightness(prev_br);
       strip.setBrightness(prev_br);
       strip.show();
-      print(std::string("setBrightness2: " + std::to_string(prev_br)));
+      print(string("setBrightness2: " + std::to_string(prev_br)));
       delay(10);
     }
   }
@@ -294,22 +296,22 @@ void loop() {
         case 0: 
           // Удержание - всегда меняется яркость
           data.bright[data.mode] = shift; 
-          print(std::string("data.bright[") + std::to_string(data.mode) + "] = " + std::to_string(shift));
+          print(string("data.bright[") + std::to_string(data.mode) + "] = " + std::to_string(shift));
           break;
         case 1: 
           if (data.mode == 0){ // для rgb меняем цвет
             data.hue[data.mode] = shift; 
-            print(std::string("data.hue[") + std::to_string(data.mode) + "] = " + std::to_string(shift));
+            print(string("data.hue[") + std::to_string(data.mode) + "] = " + std::to_string(shift));
           }
           else{ // для белого режима меняем температуру
             data.sat[data.mode] = shift; 
-            print(std::string("data.sat[") + std::to_string(data.mode) + "] = " + std::to_string(shift));
+            print(string("data.sat[") + std::to_string(data.mode) + "] = " + std::to_string(shift));
           }
           break; 
         case 2:
             // после 2 кликов удержание всегда меняет температуру
             data.sat[data.mode] = shift; 
-            print(std::string("data.sat[") + std::to_string(data.mode) + "] = " + std::to_string(shift));
+            print(string("data.sat[") + std::to_string(data.mode) + "] = " + std::to_string(shift));
             break;
       }
       applyMode();
