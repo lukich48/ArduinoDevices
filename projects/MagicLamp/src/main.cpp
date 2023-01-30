@@ -28,7 +28,7 @@ const char* mqttPass = MQTT_PASSWORD;
 #define LED_NUM 30      // к-во светодиодов
 
 #define VB_DEB 0        // отключаем антидребезг (он есть у фильтра)
-#define VB_CLICK 700    // таймаут клика
+#define VB_CLICK 900    // таймаут клика
 #include <VirtualButton.h>
 VButton gest;
 
@@ -38,7 +38,7 @@ Adafruit_DotStar strip(LED_NUM, LED_DATA_PIN, LED_CLOCK_PIN, DOTSTAR_BRG);
 struct Data {
   bool state = 1;     // 0 выкл, 1 вкл
   byte mode = 0;      // 0 цвет, 1 теплота, 2 огонь
-  byte bright[3] = {80, 80, 80};  // яркость
+  byte bright[3] = {100, 100, 100};  // яркость
   byte hue[3] = {0, 50, 50};      // цвет    
   byte sat[3] = {255, 175, 175};      // насыщенность
 };
@@ -69,7 +69,7 @@ void print(string message)
 }
 
 // получение расстояния с дальномера
-#define HC_MAX_LEN 700L  // макс. расстояние измерения, мм
+#define HC_MAX_LEN 500L  // макс. расстояние измерения, мм
 int getDist(byte trig, byte echo) {
   digitalWrite(trig, HIGH);
   delayMicroseconds(10);
@@ -146,7 +146,6 @@ void applyMode() {
       int shift = prev_br > data.bright[data.mode] ? -BR_STEP : BR_STEP;
       while (abs(prev_br - data.bright[data.mode]) > BR_STEP) {
         prev_br += shift;
-        // led.setBrightness(prev_br);
         strip.setBrightness(prev_br);
         strip.show();
         print(string("setBrightness1: " + std::to_string(prev_br)));
@@ -159,7 +158,6 @@ void applyMode() {
     while (prev_br > 0) {
       prev_br -= BR_STEP;
       if (prev_br < 0) prev_br = 0;
-      // led.setBrightness(prev_br);
       strip.setBrightness(prev_br);
       strip.show();
       print(string("setBrightness2: " + std::to_string(prev_br)));
@@ -168,10 +166,6 @@ void applyMode() {
   }
   
   mem.update(); // обновить настройки
-}
-
-void setLED() {
-  // FastLED.showColor(CRGB(led.R, led.G, led.B));
 }
 
 // огненный эффект
@@ -208,15 +202,33 @@ void fireTick() {
 
 // подмигнуть яркостью
 void pulse() {
-  for (int i = prev_br; i < prev_br + 70; i += 5) {
-    strip.setBrightness(min(255, i));
-    strip.show();
-    delay(10);
+  uint8_t pulse_br = (prev_br + 100 > 255) ? prev_br - 100 : prev_br + 100;
+
+  if (pulse_br > prev_br)
+  {
+    for (int i = prev_br; i <= pulse_br; i += 10) {
+      strip.setBrightness(i);
+      strip.show();
+      delay(10);
+    }
+    for (int i = pulse_br; i >= prev_br; i -= 10) {
+      strip.setBrightness(i);
+      strip.show();
+      delay(10);
+    }
   }
-  for (int i = prev_br + 70; i > prev_br; i -= 5) {
-    strip.setBrightness(min(255, i));
-    strip.show();
-    delay(10);
+  else
+  {
+    for (int i = prev_br; i > pulse_br; i -= 5) {
+      strip.setBrightness(i);
+      strip.show();
+      delay(10);
+    }
+    for (int i = pulse_br; i < prev_br; i += 5) {
+      strip.setBrightness(i);
+      strip.show();
+      delay(10);
+    }
   }
 }
 
@@ -249,12 +261,27 @@ void loop() {
     static int offset_d;    // оффсеты для настроек
     static byte offset_v;
 
-    int dist = getDist(HC_TRIG, HC_ECHO); // получаем расстояние
-    dist = getFilterMedian(dist);         // медиана
-    dist = getFilterSkip(dist);           // пропускающий фильтр
-    int dist_f = getFilterExp(dist);      // усреднение
+    int dist1 = getDist(HC_TRIG, HC_ECHO); // получаем расстояние
+    int dist2 = getFilterMedian(dist1);         // медиана
+    int dist3 = getFilterSkip(dist2);           // пропускающий фильтр
+    int dist_f = getFilterExp(dist3);      // усреднение
 
-    gest.poll(dist);                      // расстояние > 0 - это клик
+    // защита от дребезга
+    static uint8_t count = 0;
+    count += dist3 ? 1 :0;
+    if (!dist3) count = 0;
+
+    gest.poll(count >= 3 && dist3);                      // расстояние > 0 - это клик
+
+    // helper.sender.publish("test/magic-lamp/dist", 
+    // string("dist1: " + std::to_string(dist1) +
+    //   " dist2: " + std::to_string(dist2) +
+    //   " dist3: " + std::to_string(dist3) +
+    //   " dist_f: " + std::to_string(dist_f) +
+    //   " count: " + std::to_string(count) +
+    //   " clicks: " + std::to_string(gest.clicks)
+    // ) 
+    // , false);
 
     // есть клики и прошло 2 секунды после настройки (удержание)
     if (gest.hasClicks() && millis() - tout > 2000) {
@@ -263,8 +290,12 @@ void loop() {
           data.state = !data.state;  // вкл/выкл
           break;
         case 2:
-          // если включена И меняем режим (0.. 2)
-          if (data.state && ++data.mode >= 3) data.mode = 0;
+          // если включена И меняем режим (0.. 1)
+          if (data.state && ++data.mode >= 2) data.mode = 0;
+          break;
+        case 3:
+          // свеча
+          if (data.state) data.mode = 2;
           break;
       }
       applyMode();
@@ -277,7 +308,7 @@ void loop() {
 
     // удержание (выполнится однократно)
     if (gest.held() && data.state) {
-      pulse();  // мигнуть яркостью
+      // pulse();  // мигнуть яркостью
       offset_d = dist_f;    // оффсет расстояния для дальнейшей настройки
       switch (gest.clicks) {
         case 0: offset_v = data.bright[data.mode]; break;   // оффсет яркости
