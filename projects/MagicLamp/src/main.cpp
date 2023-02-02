@@ -28,7 +28,7 @@ const char* mqttPass = MQTT_PASSWORD;
 #define LED_NUM 30      // к-во светодиодов
 
 #define VB_DEB 0        // отключаем антидребезг (он есть у фильтра)
-#define VB_CLICK 900    // таймаут клика
+#define VB_CLICK 1500    // таймаут клика
 #include <VirtualButton.h>
 VButton gest;
 
@@ -202,16 +202,16 @@ void fireTick() {
 
 // подмигнуть яркостью
 void pulse() {
-  uint8_t pulse_br = (prev_br + 100 > 255) ? prev_br - 100 : prev_br + 100;
+  uint8_t pulse_br = (prev_br + 125 > 255) ? prev_br - 125 : prev_br + 125;
 
   if (pulse_br > prev_br)
   {
-    for (int i = prev_br; i <= pulse_br; i += 10) {
+    for (int i = prev_br; i <= pulse_br; i += 15) {
       strip.setBrightness(i);
       strip.show();
       delay(10);
     }
-    for (int i = pulse_br; i >= prev_br; i -= 10) {
+    for (int i = pulse_br; i >= prev_br; i -= 15) {
       strip.setBrightness(i);
       strip.show();
       delay(10);
@@ -308,11 +308,16 @@ void loop() {
 
     // удержание (выполнится однократно)
     if (gest.held() && data.state) {
-      // pulse();  // мигнуть яркостью
       offset_d = dist_f;    // оффсет расстояния для дальнейшей настройки
       switch (gest.clicks) {
         case 0: offset_v = data.bright[data.mode]; break;   // оффсет яркости
-        case 1: offset_v = data.hue[data.mode]; break;    // оффсет значения
+        case 1:
+          if (data.mode == 0) // для rgb меняем цвет
+            offset_v = data.hue[data.mode];
+          else // для белого режима меняем температуру
+            offset_v = data.sat[data.mode];
+          break;   
+        case 2: offset_v = data.sat[data.mode]; break; 
       }
     }
 
@@ -321,6 +326,8 @@ void loop() {
       tout = millis();
       // смещение текущей настройки как оффсет + (текущее расстояние - расстояние начала)
       int shift = constrain(offset_v + (dist_f - offset_d), 0, 255);
+      offset_d = dist_f;
+      offset_v = shift;
       
       // меняем настройки
       switch (gest.clicks) {
