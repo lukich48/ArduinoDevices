@@ -4,8 +4,31 @@
 #include <Adafruit_DotStar.h>
 #include <Wire.h>
 
+#include "home_ConnectionSettings.h"
+#include "home_ConnectionHelper.h"
+#include <Secret.h>
+
+const char* ssid = WI_FI_SSID;
+const char* wifiPass = WI_FI_PASSWORD;
+const char* mqttServer = MQTT_SERVER;
+const int mqttPort = MQTT_PORT;
+const char* mqttUser = MQTT_USER;
+const char* mqttPass = MQTT_PASSWORD;
+
+ConnectionSettings settings(
+	ssid,
+	wifiPass,
+	mqttServer,
+	mqttPort,
+	mqttUser,
+	mqttPass,
+	"ardbeg/magiclamp"
+);
+
+ConnectionHelper helper(&settings);
+
 // There is only one pixel on the board
-#define NUMPIXELS 15
+#define NUMPIXELS 30
 
 //Use these pin definitions for the ItsyBitsy M4
 #define DATAPIN    13
@@ -14,7 +37,7 @@
 Adafruit_DotStar strip(NUMPIXELS, DATAPIN, CLOCKPIN, DOTSTAR_BRG);
 
 // Rainbow cycle along whole strip. Pass delay time (in ms) between frames.
-void rainbow(int wait) {
+void rainbow_old(int wait) {
   // Hue of first pixel runs 5 complete loops through the color wheel.
   // Color wheel has a range of 65536 but it's OK if we roll over, so
   // just count from 0 to 5*65536. Adding 256 to firstPixelHue each time
@@ -41,12 +64,38 @@ void setColor(uint16_t hue)
 {
     uint16_t first_saturation = 255;
     for( int i = 0; i < NUMPIXELS; i++){
-        uint16_t saturation = first_saturation - (10*(i+1));
+        uint16_t saturation = first_saturation; // - (10*(i+1));
         uint32_t color = strip.ColorHSV(hue, saturation, 150);
         color = strip.gamma32(color);
         strip.setPixelColor(i, color);
+        hue+=500;
     }
     strip.show();
+}
+
+void rainbow(unsigned long timeout = 100){
+  static long move_tmr;
+  static uint16_t first_hue; // = data.hue[data.mode];
+
+  if (millis() - move_tmr > timeout) {
+    move_tmr = millis();
+
+    // strip.rainbow(first_hue, 1, 255, 150, true);
+    // strip.show();
+    // delay(10);
+
+    // helper.sender.publish("test/magic-lamp/rainbow", 
+    //     string("first_hue: " + std::to_string(first_hue) +
+    //     " sat: " + std::to_string(data.sat[data.mode]) +
+    //     " brt: " + std::to_string(data.bright[data.mode]))
+    //     , false);
+
+    //first_hue+=256;
+
+    strip.rainbow(first_hue, 1, 255, 150, true);
+    strip.show();
+    first_hue+=256;
+  }
 }
 
 void setup() {
@@ -55,25 +104,39 @@ void setup() {
 //   strip.show();  // Turn all LEDs off ASAP
     //strip.rainbow(0, 1, 150, 255, true);
 
-    uint32_t color = strip.ColorHSV(13000, 175, 150);
-    color = strip.gamma32(color);
+    // uint32_t color = strip.ColorHSV(13000, 175, 150);
+    // color = strip.gamma32(color);
     
-    strip.fill(color, 0, 0);
-    strip.show();
+    // strip.fill(color, 0, 0);
+    // strip.show();
+    // setColor(13000);
+    helper.setup();
 }
 
 void loop() {
+  helper.handle();
   // rainbow(10);             // Flowing rainbow cycle along the whole strip
-//   strip.rainbow(0, 1, 150, 255, true);
+    //strip.rainbow(0, 1, 255, 150, true);
 //   uint32_t color = strip.ColorHSV(52, 80, 255);
 //     color = strip.gamma32(color);
     
 //   strip.fill(color, 0, 0);
-//   strip.show();
-//   delay(10);
+  //   strip.show();
 
 
+  //  delay(1000);
+
+  rainbow(10);
+
+  // strip.rainbow(13000, 1, 255, 150, true);
+  // strip.show();
+  // delay(1000);
+  // strip.rainbow(25000, 1, 255, 150, true);
+  // strip.show();
+  // delay(1000);
     // setColor(13000);
+    // delay(1000);
+    // setColor(25000);
     // delay(1000);
         
 

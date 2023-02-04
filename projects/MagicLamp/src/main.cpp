@@ -20,6 +20,7 @@ const int mqttPort = MQTT_PORT;
 const char* mqttUser = MQTT_USER;
 const char* mqttPass = MQTT_PASSWORD;
 
+#define HOME_DEBUG 0
 #define HC_ECHO 4       // пин Echo
 #define HC_TRIG 5       // пин Trig
 
@@ -38,9 +39,9 @@ Adafruit_DotStar strip(LED_NUM, LED_DATA_PIN, LED_CLOCK_PIN, DOTSTAR_BRG);
 struct Data {
   bool state = 1;     // 0 выкл, 1 вкл
   byte mode = 0;      // 0 цвет, 1 теплота, 2 огонь
-  byte bright[3] = {100, 100, 100};  // яркость
-  byte hue[3] = {0, 50, 50};      // цвет    
-  byte sat[3] = {255, 175, 175};      // насыщенность
+  byte bright[4] = {100, 100, 100, 150};  // яркость
+  byte hue[4] = {0, 50, 50, 0};      // цвет    
+  byte sat[4] = {255, 175, 175, 255};      // насыщенность
 };
 
 Data data;
@@ -65,7 +66,9 @@ ConnectionHelper helper(&settings);
 
 void print(string message)
 {
-	Serial.println(message.c_str());
+  if (HOME_DEBUG){
+	  Serial.println(message.c_str());
+  }
 }
 
 // получение расстояния с дальномера
@@ -76,7 +79,7 @@ int getDist(byte trig, byte echo) {
   digitalWrite(trig, LOW);
 
   // измеряем время ответного импульса
-  uint32_t us = pulseIn(echo, HIGH, (HC_MAX_LEN * 2 * 1000 / 343));
+  uint32_t us = pulseIn(echo, HIGH, (HC_MAX_LEN * 2000 / 343));
 
   // считаем расстояние и возвращаем
   return (us * 343L / 2000);
@@ -134,12 +137,14 @@ void applyMode() {
     color = strip.gamma32(color);
     strip.fill(color, 0, 0);
     strip.show();
-
-      print(string("applyMode: ") + std::to_string(data.mode) 
-        + " hue: " + std::to_string(data.hue[data.mode])
-        + " sat: " + std::to_string(data.sat[data.mode])
-        + " bright: " + std::to_string(data.bright[data.mode])
-        );
+    
+  // if (HOME_DEBUG){
+  //     print(string("applyMode: ") + std::to_string(data.mode) 
+  //       + " hue: " + std::to_string(data.hue[data.mode])
+  //       + " sat: " + std::to_string(data.sat[data.mode])
+  //       + " bright: " + std::to_string(data.bright[data.mode])
+  //       );
+  // }
 
     // плавная смена яркости при ВКЛЮЧЕНИИ и СМЕНЕ РЕЖИМА
     if (prev_br != data.bright[data.mode]) {
@@ -164,8 +169,6 @@ void applyMode() {
       delay(10);
     }
   }
-  
-  mem.update(); // обновить настройки
 }
 
 // огненный эффект
@@ -190,13 +193,32 @@ void fireTick() {
 
     // преобразуем в цвет как текущий цвет + (0.. 24)
     int hue = data.hue[2] + fil_val / 5;
-    // led.setWheel8(hue, br);
-    //todo: нужно sat менять а не br
+
     uint32_t color = strip.ColorHSV(hue * 257, 255, br);
     color = strip.gamma32(color);
     strip.fill(color, 0, 0);
     strip.show();
+  }
+}
 
+void rainbow(unsigned long timeout = 10){
+  static long move_tmr;
+  static uint16_t first_hue;
+
+  if (millis() - move_tmr > timeout) {
+    move_tmr = millis();
+
+    strip.rainbow(first_hue, 1, data.sat[data.mode], data.bright[data.mode], true);
+    strip.show();
+
+    if (HOME_DEBUG)
+    helper.sender.publish("test/magic-lamp/rainbow", 
+        string("first_hue: " + std::to_string(first_hue) +
+        " sat: " + std::to_string(data.sat[data.mode]) +
+        " brt: " + std::to_string(data.bright[data.mode]))
+        , false);
+
+    first_hue+=256;
   }
 }
 
@@ -250,7 +272,16 @@ void loop() {
   helper.handle();
 
   mem.tick();   // менеджер памяти
-  if (data.state && data.mode == 2) fireTick();   // анимация огня
+
+  if (data.state)
+    switch (data.mode){
+      case 2:
+        fireTick();   // анимация огня
+        break;
+      case 3:
+        rainbow(); // радуга
+        break;
+    }
 
   // таймер 50мс, опрос датчика и вся основная логика
   static uint32_t tmr;
@@ -273,32 +304,44 @@ void loop() {
 
     gest.poll(count >= 3 && dist3);                      // расстояние > 0 - это клик
 
-    // helper.sender.publish("test/magic-lamp/dist", 
-    // string("dist1: " + std::to_string(dist1) +
-    //   " dist2: " + std::to_string(dist2) +
-    //   " dist3: " + std::to_string(dist3) +
-    //   " dist_f: " + std::to_string(dist_f) +
-    //   " count: " + std::to_string(count) +
-    //   " clicks: " + std::to_string(gest.clicks)
-    // ) 
-    // , false);
+    if (HOME_DEBUG)
+      helper.sender.publish("test/magic-lamp/dist", 
+        string("dist1: " + std::to_string(dist1) +
+        " dist2: " + std::to_string(dist2) +
+        " dist3: " + std::to_string(dist3) +
+        " dist_f: " + std::to_string(dist_f) +
+        " count: " + std::to_string(count) +
+        " clicks: " + std::to_string(gest.clicks)
+      ) 
+      , false);
 
-    // есть клики и прошло 2 секунды после настройки (удержание)
+    // есть клики и прошло 2 секунды после настройки
     if (gest.hasClicks() && millis() - tout > 2000) {
       switch (gest.clicks) {
         case 1:
           data.state = !data.state;  // вкл/выкл
+          applyMode();
           break;
         case 2:
           // если включена И меняем режим (0.. 1)
-          if (data.state && ++data.mode >= 2) data.mode = 0;
+          if (data.state && ++data.mode > 1) data.mode = 0;
+          applyMode();
           break;
         case 3:
           // свеча
           if (data.state) data.mode = 2;
           break;
+        case 4:
+          // радуга
+          if (data.state) data.mode = 3;
+          break;
       }
-      applyMode();
+      mem.update();
+
+      if (HOME_DEBUG)
+      helper.sender.publish("test/magic-lamp/clicks", 
+        string("clicks: " + std::to_string(gest.clicks))
+        , false);
     }
 
     // клик
@@ -353,6 +396,7 @@ void loop() {
             break;
       }
       applyMode();
+      mem.update();
     }
   }
 }
