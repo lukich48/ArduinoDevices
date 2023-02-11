@@ -1,5 +1,9 @@
 /*
   Основано на прокте AlexGyver https://kit.alexgyver.ru/tutorials/magic-lamp/
+  todo: 
+  - вынести общую яркость в настройки
+  - дообавить лимиты яркости
+  - вынести скорость радуги в настройки
 */
 
 #include <Arduino.h>
@@ -20,6 +24,8 @@ const int mqttPort = MQTT_PORT;
 const char* mqttUser = MQTT_USER;
 const char* mqttPass = MQTT_PASSWORD;
 
+#define ESP8266 1
+#define EEPROM_SIZE 4096
 #define HOME_DEBUG 0
 #define HC_ECHO 4       // пин Echo
 #define HC_TRIG 5       // пин Trig
@@ -41,7 +47,7 @@ struct Data {
   byte mode = 0;      // 0 цвет, 1 теплота, 2 огонь
   byte bright[4] = {100, 100, 100, 150};  // яркость
   byte hue[4] = {0, 50, 50, 0};      // цвет    
-  byte sat[4] = {255, 175, 175, 255};      // насыщенность
+  byte sat[4] = {255, 175, 255, 255};      // насыщенность
 };
 
 Data data;
@@ -192,9 +198,16 @@ void fireTick() {
     int br = map(fil_val, 0, 120, 100, 255);
 
     // преобразуем в цвет как текущий цвет + (0.. 24)
-    int hue = data.hue[2] + fil_val / 5;
+    int hue = data.hue[data.mode] + fil_val / 5;
 
-    uint32_t color = strip.ColorHSV(hue * 257, 255, br);
+    if (HOME_DEBUG)
+      helper.sender.publish("test/magic-lamp/fire", 
+          string("hue: " + std::to_string(hue) +
+          " sat: " + std::to_string(data.sat[data.mode]) +
+          " brt: " + std::to_string(br))
+          , false);
+
+    uint32_t color = strip.ColorHSV(hue * 257, data.sat[data.mode], br);
     color = strip.gamma32(color);
     strip.fill(color, 0, 0);
     strip.show();
@@ -256,6 +269,7 @@ void pulse() {
 
 void setup() {
   Serial.begin(115200);
+  EEPROM.begin(EEPROM_SIZE);
 
   pinMode(HC_TRIG, OUTPUT); // trig выход
   pinMode(HC_ECHO, INPUT);  // echo вход
@@ -368,7 +382,7 @@ void loop() {
     if (gest.hold() && data.state) {
       tout = millis();
       // смещение текущей настройки как оффсет + (текущее расстояние - расстояние начала)
-      int shift = constrain(offset_v + (dist_f - offset_d), 0, 255);
+      uint8_t shift = constrain(offset_v + (dist_f - offset_d), 0, 255);
       offset_d = dist_f;
       offset_v = shift;
       
@@ -376,26 +390,26 @@ void loop() {
       switch (gest.clicks) {
         case 0: 
           // Удержание - всегда меняется яркость
+          // todo: вынести единую яркость
           data.bright[data.mode] = shift; 
-          print(string("data.bright[") + std::to_string(data.mode) + "] = " + std::to_string(shift));
+          strip.setBrightness(shift);
+          strip.show();
           break;
         case 1: 
           if (data.mode == 0){ // для rgb меняем цвет
             data.hue[data.mode] = shift; 
-            print(string("data.hue[") + std::to_string(data.mode) + "] = " + std::to_string(shift));
           }
-          else{ // для белого режима меняем температуру
+          else{ // для остальных режимов меняем температуру
             data.sat[data.mode] = shift; 
-            print(string("data.sat[") + std::to_string(data.mode) + "] = " + std::to_string(shift));
           }
+          applyMode();
           break; 
         case 2:
             // после 2 кликов удержание всегда меняет температуру
             data.sat[data.mode] = shift; 
-            print(string("data.sat[") + std::to_string(data.mode) + "] = " + std::to_string(shift));
+            applyMode();
             break;
       }
-      applyMode();
       mem.update();
     }
   }
