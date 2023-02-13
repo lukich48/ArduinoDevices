@@ -2,8 +2,6 @@
   Основано на прокте AlexGyver https://kit.alexgyver.ru/tutorials/magic-lamp/
   todo: 
   - вынести общую яркость в настройки
-  - дообавить лимиты яркости
-  - вынести скорость радуги в настройки
 */
 
 #include <Arduino.h>
@@ -48,13 +46,14 @@ struct Data {
   byte bright[4] = {100, 100, 100, 150};  // яркость
   byte hue[4] = {0, 50, 50, 0};      // цвет    
   byte sat[4] = {255, 175, 255, 255};      // насыщенность
+  byte rainbow_timeout = 125;   // скорость радуги в мс
 };
 
 Data data;
 
 // менеджер памяти
 #include <EEManager.h>
-EEManager mem(data);
+EEManager mem(data, 10000);
 
 int prev_br;
 
@@ -78,7 +77,7 @@ void print(string message)
 }
 
 // получение расстояния с дальномера
-#define HC_MAX_LEN 500L  // макс. расстояние измерения, мм
+#define HC_MAX_LEN 600L  // макс. расстояние измерения, мм
 int getDist(byte trig, byte echo) {
   digitalWrite(trig, HIGH);
   delayMicroseconds(10);
@@ -135,6 +134,12 @@ int getFilterExp(int val) {
   return filt / ES_MULT;
 }
 
+void setBrightness(uint8_t value){
+  strip.setBrightness(map(value, 0, 255, 20, 255));
+  strip.show();
+
+}
+
 #define BR_STEP 4
 void applyMode() {
   if (data.state) {
@@ -143,14 +148,6 @@ void applyMode() {
     color = strip.gamma32(color);
     strip.fill(color, 0, 0);
     strip.show();
-    
-  // if (HOME_DEBUG){
-  //     print(string("applyMode: ") + std::to_string(data.mode) 
-  //       + " hue: " + std::to_string(data.hue[data.mode])
-  //       + " sat: " + std::to_string(data.sat[data.mode])
-  //       + " bright: " + std::to_string(data.bright[data.mode])
-  //       );
-  // }
 
     // плавная смена яркости при ВКЛЮЧЕНИИ и СМЕНЕ РЕЖИМА
     if (prev_br != data.bright[data.mode]) {
@@ -159,7 +156,6 @@ void applyMode() {
         prev_br += shift;
         strip.setBrightness(prev_br);
         strip.show();
-        print(string("setBrightness1: " + std::to_string(prev_br)));
         delay(10);
       }
       prev_br = data.bright[data.mode];
@@ -171,10 +167,18 @@ void applyMode() {
       if (prev_br < 0) prev_br = 0;
       strip.setBrightness(prev_br);
       strip.show();
-      print(string("setBrightness2: " + std::to_string(prev_br)));
       delay(10);
     }
   }
+
+  if (HOME_DEBUG)
+    helper.sender.publish("test/magic-lamp/apply",
+    string("applyMode: ") + std::to_string(data.mode) 
+      + " state: " + std::to_string(data.state)
+      + " hue: " + std::to_string(data.hue[data.mode])
+      + " sat: " + std::to_string(data.sat[data.mode])
+      + " bright: " + std::to_string(data.bright[data.mode])
+      , false);
 }
 
 // огненный эффект
@@ -214,22 +218,15 @@ void fireTick() {
   }
 }
 
-void rainbow(unsigned long timeout = 10){
+void rainbow(){
   static long move_tmr;
   static uint16_t first_hue;
 
-  if (millis() - move_tmr > timeout) {
+  if (millis() - move_tmr > map(data.rainbow_timeout, 0, 255, 1, 20)) {
     move_tmr = millis();
 
     strip.rainbow(first_hue, 1, data.sat[data.mode], data.bright[data.mode], true);
     strip.show();
-
-    if (HOME_DEBUG)
-    helper.sender.publish("test/magic-lamp/rainbow", 
-        string("first_hue: " + std::to_string(first_hue) +
-        " sat: " + std::to_string(data.sat[data.mode]) +
-        " brt: " + std::to_string(data.bright[data.mode]))
-        , false);
 
     first_hue+=256;
   }
@@ -277,6 +274,12 @@ void setup() {
   strip.begin();
 
   mem.begin(0, 'a');  // запуск и чтение настроек
+
+  strip.rainbow(0, 1, 255, 150, true);
+  strip.show();
+  delay(1000);
+  strip.clear();
+
   applyMode();        // применить режим
 
   helper.setup();
@@ -304,7 +307,6 @@ void loop() {
 
     static uint32_t tout;   // таймаут настройки (удержание)
     static int offset_d;    // оффсеты для настроек
-    static byte offset_v;
 
     int dist1 = getDist(HC_TRIG, HC_ECHO); // получаем расстояние
     int dist2 = getFilterMedian(dist1);         // медиана
@@ -351,11 +353,6 @@ void loop() {
           break;
       }
       mem.update();
-
-      if (HOME_DEBUG)
-      helper.sender.publish("test/magic-lamp/clicks", 
-        string("clicks: " + std::to_string(gest.clicks))
-        , false);
     }
 
     // клик
@@ -366,50 +363,57 @@ void loop() {
     // удержание (выполнится однократно)
     if (gest.held() && data.state) {
       offset_d = dist_f;    // оффсет расстояния для дальнейшей настройки
-      switch (gest.clicks) {
-        case 0: offset_v = data.bright[data.mode]; break;   // оффсет яркости
-        case 1:
-          if (data.mode == 0) // для rgb меняем цвет
-            offset_v = data.hue[data.mode];
-          else // для белого режима меняем температуру
-            offset_v = data.sat[data.mode];
-          break;   
-        case 2: offset_v = data.sat[data.mode]; break; 
-      }
     }
 
     // удержание (выполнится пока удерживается)
     if (gest.hold() && data.state) {
       tout = millis();
       // смещение текущей настройки как оффсет + (текущее расстояние - расстояние начала)
-      uint8_t shift = constrain(offset_v + (dist_f - offset_d), 0, 255);
-      offset_d = dist_f;
-      offset_v = shift;
-      
+      uint8_t shift = 0;   
+      uint8_t offset_v = 0; 
+
       // меняем настройки
       switch (gest.clicks) {
         case 0: 
           // Удержание - всегда меняется яркость
           // todo: вынести единую яркость
+          offset_v = data.bright[data.mode];
+          shift = constrain(offset_v + (dist_f - offset_d), 0, 255);
+
           data.bright[data.mode] = shift; 
           strip.setBrightness(shift);
           strip.show();
           break;
         case 1: 
           if (data.mode == 0){ // для rgb меняем цвет
+            offset_v = data.hue[data.mode];
+            shift = constrain(offset_v + (dist_f - offset_d), 0, 255);
             data.hue[data.mode] = shift; 
+            applyMode();
+          }
+          else if (data.mode == 3){ // для радуги меняем скорость
+            offset_v = data.rainbow_timeout;
+            shift = constrain(offset_v + (dist_f - offset_d), 0, 255);
+            data.rainbow_timeout = shift;
           }
           else{ // для остальных режимов меняем температуру
+            offset_v = data.sat[data.mode];
+            shift = constrain(offset_v + (dist_f - offset_d), 0, 255);
             data.sat[data.mode] = shift; 
+            applyMode();
           }
-          applyMode();
           break; 
         case 2:
             // после 2 кликов удержание всегда меняет температуру
+            offset_v = data.sat[data.mode];
+            shift = constrain(offset_v + (dist_f - offset_d), 0, 255);
             data.sat[data.mode] = shift; 
             applyMode();
             break;
       }
+      // подтягиваем ладонь
+      offset_d = dist_f;
+
       mem.update();
     }
   }
