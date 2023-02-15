@@ -2,6 +2,7 @@
   Основано на прокте AlexGyver https://kit.alexgyver.ru/tutorials/magic-lamp/
   todo: 
   - вынести общую яркость в настройки
+  - Для режимов радуги и чвечи убрать ApplyMode() - потому что заполняет зеленым
 */
 
 #include <Arduino.h>
@@ -77,7 +78,7 @@ void print(string message)
 }
 
 // получение расстояния с дальномера
-#define HC_MAX_LEN 600L  // макс. расстояние измерения, мм
+#define HC_MAX_LEN 500L  // макс. расстояние измерения, мм
 int getDist(byte trig, byte echo) {
   digitalWrite(trig, HIGH);
   delayMicroseconds(10);
@@ -135,9 +136,10 @@ int getFilterExp(int val) {
 }
 
 void setBrightness(uint8_t value){
-  strip.setBrightness(map(value, 0, 255, 20, 255));
+  // strip.setBrightness(map(value, 0, 255, 20, 255));
+  strip.setBrightness(value);
   strip.show();
-
+  prev_br = value;
 }
 
 #define BR_STEP 4
@@ -222,13 +224,13 @@ void rainbow(){
   static long move_tmr;
   static uint16_t first_hue;
 
-  if (millis() - move_tmr > map(data.rainbow_timeout, 0, 255, 1, 20)) {
+  if (millis() - move_tmr > map(data.rainbow_timeout, 0, 255, 10, 80)) {
     move_tmr = millis();
 
     strip.rainbow(first_hue, 1, data.sat[data.mode], data.bright[data.mode], true);
     strip.show();
 
-    first_hue+=256;
+    first_hue+=1024;
   }
 }
 
@@ -238,28 +240,28 @@ void pulse() {
 
   if (pulse_br > prev_br)
   {
-    for (int i = prev_br; i <= pulse_br; i += 15) {
+    for (int i = prev_br; i <= pulse_br; i += 10) {
       strip.setBrightness(i);
       strip.show();
-      delay(10);
+      delay(5);
     }
-    for (int i = pulse_br; i >= prev_br; i -= 15) {
+    for (int i = pulse_br; i >= prev_br; i -= 10) {
       strip.setBrightness(i);
       strip.show();
-      delay(10);
+      delay(5);
     }
   }
   else
   {
-    for (int i = prev_br; i > pulse_br; i -= 5) {
+    for (int i = prev_br; i > pulse_br; i -= 10) {
       strip.setBrightness(i);
       strip.show();
-      delay(10);
+      delay(5);
     }
-    for (int i = pulse_br; i < prev_br; i += 5) {
+    for (int i = pulse_br; i < prev_br; i += 10) {
       strip.setBrightness(i);
       strip.show();
-      delay(10);
+      delay(5);
     }
   }
 }
@@ -279,6 +281,7 @@ void setup() {
   strip.show();
   delay(1000);
   strip.clear();
+  delay(10);
 
   applyMode();        // применить режим
 
@@ -381,8 +384,7 @@ void loop() {
           shift = constrain(offset_v + (dist_f - offset_d), 0, 255);
 
           data.bright[data.mode] = shift; 
-          strip.setBrightness(shift);
-          strip.show();
+          setBrightness(shift);
           break;
         case 1: 
           if (data.mode == 0){ // для rgb меняем цвет

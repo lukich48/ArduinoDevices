@@ -73,11 +73,11 @@ void setColor(uint16_t hue)
     strip.show();
 }
 
-void rainbow(unsigned long timeout = 100){
+void rainbow(){
   static long move_tmr;
   static uint16_t first_hue; // = data.hue[data.mode];
 
-  if (millis() - move_tmr > timeout) {
+  if (millis() - move_tmr > 40) {
     move_tmr = millis();
 
     // strip.rainbow(first_hue, 1, 255, 150, true);
@@ -94,7 +94,7 @@ void rainbow(unsigned long timeout = 100){
 
     strip.rainbow(first_hue, 1, 255, 150, true);
     strip.show();
-    first_hue+=256;
+    first_hue+=1024;
   }
 }
 
@@ -126,7 +126,7 @@ void loop() {
 
   //  delay(1000);
 
-  rainbow(10);
+  rainbow();
 
   // strip.rainbow(13000, 1, 255, 150, true);
   // strip.show();
