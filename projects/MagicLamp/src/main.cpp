@@ -1,8 +1,9 @@
 /*
   Основано на прокте AlexGyver https://kit.alexgyver.ru/tutorials/magic-lamp/
   todo: 
-  - вынести общую яркость в настройки
-  - Для режимов радуги и чвечи убрать ApplyMode() - потому что заполняет зеленым
+  - поставить лимит на яркость (нихний порог)
+  - разобраться почему базовая яркость не меняется у свечи
+  - Для режимов радуги и чвечи убрать ApplyMode() - потому что заполняет одним цветом
 */
 
 #include <Arduino.h>
@@ -44,7 +45,7 @@ Adafruit_DotStar strip(LED_NUM, LED_DATA_PIN, LED_CLOCK_PIN, DOTSTAR_BRG);
 struct Data {
   bool state = 1;     // 0 выкл, 1 вкл
   byte mode = 0;      // 0 цвет, 1 теплота, 2 огонь
-  byte bright[4] = {100, 100, 100, 150};  // яркость
+  byte brightness = 150;  // яркость
   byte hue[4] = {0, 50, 50, 0};      // цвет    
   byte sat[4] = {255, 175, 255, 255};      // насыщенность
   byte rainbow_timeout = 125;   // скорость радуги в мс
@@ -146,21 +147,24 @@ void setBrightness(uint8_t value){
 void applyMode() {
   if (data.state) {
 
-    uint32_t color = strip.ColorHSV(data.hue[data.mode] * 257, data.sat[data.mode], data.bright[data.mode]);
+    uint32_t color = strip.ColorHSV(data.hue[data.mode] * 257, data.sat[data.mode], 255);
     color = strip.gamma32(color);
     strip.fill(color, 0, 0);
-    strip.show();
 
     // плавная смена яркости при ВКЛЮЧЕНИИ и СМЕНЕ РЕЖИМА
-    if (prev_br != data.bright[data.mode]) {
-      int shift = prev_br > data.bright[data.mode] ? -BR_STEP : BR_STEP;
-      while (abs(prev_br - data.bright[data.mode]) > BR_STEP) {
+    if (prev_br != data.brightness) {
+      int shift = prev_br > data.brightness ? -BR_STEP : BR_STEP;
+      while (abs(prev_br - data.brightness) > BR_STEP) {
         prev_br += shift;
         strip.setBrightness(prev_br);
         strip.show();
         delay(10);
       }
-      prev_br = data.bright[data.mode];
+      prev_br = data.brightness;
+    }
+    else{
+      strip.setBrightness(data.brightness);
+      strip.show();
     }
   } else {
     // плавная смена яркости при ВЫКЛЮЧЕНИИ
@@ -179,7 +183,7 @@ void applyMode() {
       + " state: " + std::to_string(data.state)
       + " hue: " + std::to_string(data.hue[data.mode])
       + " sat: " + std::to_string(data.sat[data.mode])
-      + " bright: " + std::to_string(data.bright[data.mode])
+      + " bright: " + std::to_string(data.brightness)
       , false);
 }
 
@@ -227,7 +231,8 @@ void rainbow(){
   if (millis() - move_tmr > map(data.rainbow_timeout, 0, 255, 10, 80)) {
     move_tmr = millis();
 
-    strip.rainbow(first_hue, 1, data.sat[data.mode], data.bright[data.mode], true);
+    strip.rainbow(first_hue, 1, data.sat[data.mode], 255, true);
+    strip.setBrightness(data.brightness);
     strip.show();
 
     first_hue+=1024;
@@ -274,13 +279,14 @@ void setup() {
   pinMode(HC_ECHO, INPUT);  // echo вход
 
   strip.begin();
-
+  // mem.reset();
   mem.begin(0, 'a');  // запуск и чтение настроек
 
   strip.rainbow(0, 1, 255, 150, true);
   strip.show();
   delay(1000);
   strip.clear();
+  strip.show();
   delay(10);
 
   applyMode();        // применить режим
@@ -380,10 +386,10 @@ void loop() {
         case 0: 
           // Удержание - всегда меняется яркость
           // todo: вынести единую яркость
-          offset_v = data.bright[data.mode];
+          offset_v = data.brightness;
           shift = constrain(offset_v + (dist_f - offset_d), 0, 255);
 
-          data.bright[data.mode] = shift; 
+          data.brightness = shift; 
           setBrightness(shift);
           break;
         case 1: 
