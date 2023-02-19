@@ -71,9 +71,9 @@ ConnectionHelper helper(&settings);
 
 void print(string message)
 {
-  if (HOME_DEBUG){
+  #if HOME_DEBUG
 	  Serial.println(message.c_str());
-  }
+  #endif
 }
 
 // получение расстояния с дальномера
@@ -175,7 +175,7 @@ void applyMode() {
     }
   }
 
-  if (HOME_DEBUG)
+  #if HOME_DEBUG
     helper.sender.publish("test/magic-lamp/apply",
     string("applyMode: ") + std::to_string(data.mode) 
       + " state: " + std::to_string(data.state)
@@ -183,6 +183,7 @@ void applyMode() {
       + " sat: " + std::to_string(data.sat[data.mode])
       + " bright: " + std::to_string(data.brightness)
       , false);
+  #endif
 }
 
 // огненный эффект
@@ -208,12 +209,13 @@ void fireTick() {
     // преобразуем в цвет как текущий цвет + (0.. 24)
     int hue = data.hue[data.mode] + fil_val / 5;
 
-    if (HOME_DEBUG)
+    #if HOME_DEBUG
       helper.sender.publish("test/magic-lamp/fire", 
           string("hue: " + std::to_string(hue) +
           " sat: " + std::to_string(data.sat[data.mode]) +
           " brt: " + std::to_string(br))
           , false);
+    #endif
 
     uint32_t color = strip.ColorHSV(hue * 257, data.sat[data.mode], br);
     color = strip.gamma32(color);
@@ -327,7 +329,7 @@ void loop() {
 
     gest.poll(count >= 3 && dist3);                      // расстояние > 0 - это клик
 
-    if (HOME_DEBUG)
+    #if HOME_DEBUG
       helper.sender.publish("test/magic-lamp/dist", 
         string("dist1: " + std::to_string(dist1) +
         " dist2: " + std::to_string(dist2) +
@@ -337,7 +339,8 @@ void loop() {
         " clicks: " + std::to_string(gest.clicks)
       ) 
       , false);
-
+    #endif
+    
     // есть клики и прошло 2 секунды после настройки
     if (gest.hasClicks() && millis() - tout > 2000) {
       switch (gest.clicks) {
