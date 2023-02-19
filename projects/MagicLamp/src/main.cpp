@@ -1,7 +1,5 @@
 /*
   Основано на прокте AlexGyver https://kit.alexgyver.ru/tutorials/magic-lamp/
-  todo: 
-  - разобраться почему базовая яркость не меняется у свечи
 */
 
 #include <Arduino.h>
@@ -43,9 +41,9 @@ Adafruit_DotStar strip(LED_NUM, LED_DATA_PIN, LED_CLOCK_PIN, DOTSTAR_BRG);
 struct Data {
   bool state = 1;     // 0 выкл, 1 вкл
   byte mode = 0;      // 0 цвет, 1 теплота, 2 огонь
-  byte brightness = 150;  // яркость
-  byte hue[4] = {0, 50, 50, 0};      // цвет    
-  byte sat[4] = {255, 175, 255, 255};      // насыщенность
+  byte brightness = 120;  // яркость
+  byte hue[4] = {0, 55, 50, 0};      // цвет    
+  byte sat[4] = {255, 225, 255, 255};      // насыщенность
   byte rainbow_timeout = 125;   // скорость радуги в мс
 };
 
@@ -203,11 +201,11 @@ void fireTick() {
     // эксп фильтр, на выходе получится число 0..120
     fil_val += (rnd_val * 10 - fil_val) / 5;
 
-    // преобразуем в яркость от 100 до 255
-    int br = map(fil_val, 0, 120, 100, 255);
+    // преобразуем в яркость от 125 до 255
+    int br = map(fil_val, 0, 120, 125, 255);
 
-    // преобразуем в цвет как текущий цвет + (0.. 24)
-    int hue = data.hue[data.mode] + fil_val / 5;
+    // преобразуем в цвет как текущий цвет + (0.. 20)
+    int hue = data.hue[data.mode] + fil_val / 6;
 
     #if HOME_DEBUG
       helper.sender.publish("test/magic-lamp/fire", 
@@ -220,6 +218,7 @@ void fireTick() {
     uint32_t color = strip.ColorHSV(hue * 257, data.sat[data.mode], br);
     color = strip.gamma32(color);
     strip.fill(color, 0, 0);
+    strip.setBrightness(data.brightness);
     strip.show();
   }
 }
@@ -340,7 +339,7 @@ void loop() {
       ) 
       , false);
     #endif
-    
+
     // есть клики и прошло 2 секунды после настройки
     if (gest.hasClicks() && millis() - tout > 2000) {
       switch (gest.clicks) {
@@ -386,7 +385,6 @@ void loop() {
       switch (gest.clicks) {
         case 0: 
           // Удержание - всегда меняется яркость
-          // todo: вынести единую яркость
           offset_v = data.brightness;
           shift = constrain(offset_v + (dist_f - offset_d), 20, 255);
 
@@ -394,21 +392,23 @@ void loop() {
           setBrightness(shift);
           break;
         case 1: 
-          if (data.mode == 0){ // для rgb меняем цвет
-            offset_v = data.hue[data.mode];
+          if (data.mode == 1){ // для белого меняем температуру
+            offset_v = data.sat[data.mode];
             shift = constrain(offset_v + (dist_f - offset_d), 0, 255);
-            data.hue[data.mode] = shift; 
+            data.sat[data.mode] = shift; 
             applyMode();
+          }
+          else if (data.mode == 2){ // для свечи ничего не делаем
           }
           else if (data.mode == 3){ // для радуги меняем скорость
             offset_v = data.rainbow_timeout;
             shift = constrain(offset_v + (dist_f - offset_d), 0, 255);
             data.rainbow_timeout = shift;
           }
-          else{ // для остальных режимов меняем температуру
-            offset_v = data.sat[data.mode];
+          else{ // для остальных режимов меняем цвет
+            offset_v = data.hue[data.mode];
             shift = constrain(offset_v + (dist_f - offset_d), 0, 255);
-            data.sat[data.mode] = shift; 
+            data.hue[data.mode] = shift; 
             applyMode();
           }
           break; 
