@@ -1,9 +1,7 @@
 /*
   Основано на прокте AlexGyver https://kit.alexgyver.ru/tutorials/magic-lamp/
   todo: 
-  - поставить лимит на яркость (нихний порог)
   - разобраться почему базовая яркость не меняется у свечи
-  - Для режимов радуги и чвечи убрать ApplyMode() - потому что заполняет одним цветом
 */
 
 #include <Arduino.h>
@@ -24,9 +22,9 @@ const int mqttPort = MQTT_PORT;
 const char* mqttUser = MQTT_USER;
 const char* mqttPass = MQTT_PASSWORD;
 
+#define HOME_DEBUG 0
 #define ESP8266 1
 #define EEPROM_SIZE 4096
-#define HOME_DEBUG 0
 #define HC_ECHO 4       // пин Echo
 #define HC_TRIG 5       // пин Trig
 
@@ -137,7 +135,6 @@ int getFilterExp(int val) {
 }
 
 void setBrightness(uint8_t value){
-  // strip.setBrightness(map(value, 0, 255, 20, 255));
   strip.setBrightness(value);
   strip.show();
   prev_br = value;
@@ -146,25 +143,26 @@ void setBrightness(uint8_t value){
 #define BR_STEP 4
 void applyMode() {
   if (data.state) {
+    if (data.mode < 2){ // актуально только для одноцветных режимов     
+      uint32_t color = strip.ColorHSV(data.hue[data.mode] * 257, data.sat[data.mode], 255);
+      color = strip.gamma32(color);
+      strip.fill(color, 0, 0);
 
-    uint32_t color = strip.ColorHSV(data.hue[data.mode] * 257, data.sat[data.mode], 255);
-    color = strip.gamma32(color);
-    strip.fill(color, 0, 0);
-
-    // плавная смена яркости при ВКЛЮЧЕНИИ и СМЕНЕ РЕЖИМА
-    if (prev_br != data.brightness) {
-      int shift = prev_br > data.brightness ? -BR_STEP : BR_STEP;
-      while (abs(prev_br - data.brightness) > BR_STEP) {
-        prev_br += shift;
-        strip.setBrightness(prev_br);
-        strip.show();
-        delay(10);
+      // плавная смена яркости при ВКЛЮЧЕНИИ и СМЕНЕ РЕЖИМА
+      if (prev_br != data.brightness) {
+        int shift = prev_br > data.brightness ? -BR_STEP : BR_STEP;
+        while (abs(prev_br - data.brightness) > BR_STEP) {
+          prev_br += shift;
+          strip.setBrightness(prev_br);
+          strip.show();
+          delay(10);
+        }
+        prev_br = data.brightness;
       }
-      prev_br = data.brightness;
-    }
-    else{
-      strip.setBrightness(data.brightness);
-      strip.show();
+      else{
+        strip.setBrightness(data.brightness);
+        strip.show();
+      }
     }
   } else {
     // плавная смена яркости при ВЫКЛЮЧЕНИИ
@@ -387,7 +385,7 @@ void loop() {
           // Удержание - всегда меняется яркость
           // todo: вынести единую яркость
           offset_v = data.brightness;
-          shift = constrain(offset_v + (dist_f - offset_d), 0, 255);
+          shift = constrain(offset_v + (dist_f - offset_d), 20, 255);
 
           data.brightness = shift; 
           setBrightness(shift);
