@@ -162,6 +162,9 @@ void applyMode() {
         strip.show();
       }
     }
+    else{
+      prev_br = data.brightness;
+    }
   } else {
     // плавная смена яркости при ВЫКЛЮЧЕНИИ
     while (prev_br > 0) {
