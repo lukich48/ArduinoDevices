@@ -54,6 +54,7 @@ Data data;
 EEManager mem(data, 10000);
 
 int prev_br;
+bool is_locked = false;
 
 ConnectionSettings settings(
 	ssid,
@@ -311,6 +312,14 @@ void loop() {
         break;
     }
 
+  // крышка закрыта
+  static uint32_t tmr_lock;
+  if (is_locked && (millis() - tmr_lock < 10000)){
+    return;
+  }
+  is_locked = false;
+  tmr_lock = millis();
+
   // таймер 50мс, опрос датчика и вся основная логика
   static uint32_t tmr;
   if (millis() - tmr >= 50) {
@@ -326,10 +335,27 @@ void loop() {
 
     // защита от дребезга
     static uint8_t count = 0;
-    count += dist3 ? 1 :0;
-    if (!dist3) count = 0;
+    if (dist3)
+      count++;
+    else
+      count = 0;
 
     gest.poll(count >= 3 && dist3);                      // расстояние > 0 - это клик
+
+    // крышка закрыта
+    static uint8_t lock_count = 0;
+    if (dist_f && (dist_f < 50))
+      lock_count++;
+    else
+      lock_count = 0;
+    
+    if (lock_count >=20){
+      is_locked = true;
+      lock_count = 0;
+      #if HOME_DEBUG
+        helper.sender.publish("test/magic-lamp/is-locked", 1, false);
+      #endif
+    }
 
     #if HOME_DEBUG
       helper.sender.publish("test/magic-lamp/dist", 
