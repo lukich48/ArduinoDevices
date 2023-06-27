@@ -32,6 +32,7 @@ const char* mqttPass = MQTT_PASSWORD;
 
 #define VB_DEB 0        // отключаем антидребезг (он есть у фильтра)
 #define VB_CLICK 1500    // таймаут клика
+#define HC_MAX_LEN 600L  // макс. расстояние измерения, мм
 #include <VirtualButton.h>
 VButton gest;
 
@@ -76,7 +77,6 @@ void print(string message)
 }
 
 // получение расстояния с дальномера
-#define HC_MAX_LEN 500L  // макс. расстояние измерения, мм
 int getDist(byte trig, byte echo) {
   digitalWrite(trig, HIGH);
   delayMicroseconds(10);
@@ -90,10 +90,18 @@ int getDist(byte trig, byte echo) {
 }
 
 // медианный фильтр
-int getFilterMedian(int newVal) {
+int getFilterMedian(int val) {
   static int buf[3];
   static byte count = 0;
-  buf[count] = newVal;
+
+  // очистка фильтра
+  if (val == -1){
+    for(int i = 0; i < 3; i++) buf[i] = 0;
+    count = 0; 
+    return 0;
+  }
+
+  buf[count] = val;
   if (++count >= 3) count = 0;
   return (max(buf[0], buf[1]) == max(buf[1], buf[2])) ? max(buf[0], buf[2]) : max(buf[1], min(buf[0], buf[2]));
 }
@@ -104,6 +112,13 @@ int getFilterMedian(int newVal) {
 int getFilterSkip(int val) {
   static int prev;
   static byte count;
+
+  // очистка фильтра
+  if (val == -1){
+    prev = 0;
+    count = 0; 
+    return 0;
+  }
 
   if (!prev && val) prev = val;   // предыдущее значение 0, а текущее нет. Обновляем предыдущее
   // позволит фильтру резко срабатывать на появление руки
@@ -127,6 +142,13 @@ int getFilterSkip(int val) {
 #define ES_MULT 16L   // мультипликатор повышения разрешения фильтра
 int getFilterExp(int val) {
   static long filt;
+
+  // очистка фильтра
+  if (val == -1){
+    filt = 0;
+    return 0;
+  }
+
   if (val) filt += (val * ES_MULT - filt) / ES_EXP;
   else filt = 0;  // если значение 0 - фильтр резко сбрасывается в 0
   // в нашем случае - чтобы применить заданную установку и не менять её вниз к нулю
@@ -231,14 +253,14 @@ void rainbow(){
   static long move_tmr;
   static uint16_t first_hue;
 
-  if (millis() - move_tmr > map(data.rainbow_timeout, 0, 255, 10, 80)) {
+  if (millis() - move_tmr > map(data.rainbow_timeout, 0, 255, 4, 40)) {
     move_tmr = millis();
 
     strip.rainbow(first_hue, 1, data.sat[data.mode], 255, true);
     strip.setBrightness(data.brightness);
     strip.show();
 
-    first_hue+=1024;
+    first_hue+=256;
   }
 }
 
@@ -340,23 +362,6 @@ void loop() {
     else
       count = 0;
 
-    gest.poll(count >= 3 && dist3);                      // расстояние > 0 - это клик
-
-    // крышка закрыта
-    static uint8_t lock_count = 0;
-    if (dist_f && (dist_f < 50))
-      lock_count++;
-    else
-      lock_count = 0;
-    
-    if (lock_count >=20){
-      is_locked = true;
-      lock_count = 0;
-      #if HOME_DEBUG
-        helper.sender.publish("test/magic-lamp/is-locked", 1, false);
-      #endif
-    }
-
     #if HOME_DEBUG
       helper.sender.publish("test/magic-lamp/dist", 
         string("dist1: " + std::to_string(dist1) +
@@ -364,11 +369,37 @@ void loop() {
         " dist3: " + std::to_string(dist3) +
         " dist_f: " + std::to_string(dist_f) +
         " count: " + std::to_string(count) +
-        " clicks: " + std::to_string(gest.clicks)
+        " clicks: " + std::to_string(gest.clicks) +
+        " hold(): " + std::to_string(gest.hold())
       ) 
       , false);
     #endif
 
+    // крышка закрыта
+    static uint8_t lock_count = 0;
+    if (dist_f && (dist_f < 60) && count >=3 && !gest.hold()){
+      lock_count++;
+      #if HOME_DEBUG
+        helper.sender.publish("test/magic-lamp/lock_count", lock_count, false);
+      #endif
+    }
+    else
+      lock_count = 0;
+    
+    if (lock_count >=5){
+      is_locked = true;
+      lock_count = 0;
+      getFilterMedian(-1);
+      getFilterSkip(-1);
+      getFilterExp(-1);
+      gest.reset();
+      #if HOME_DEBUG
+        helper.sender.publish("test/magic-lamp/is-locked", 1, false);
+      #endif
+    }
+
+    gest.poll(count >= 3 && dist3);                      // расстояние > 0 - это клик
+    
     // есть клики и прошло 2 секунды после настройки
     if (gest.hasClicks() && millis() - tout > 2000) {
       switch (gest.clicks) {
