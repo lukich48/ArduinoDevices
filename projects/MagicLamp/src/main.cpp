@@ -21,6 +21,7 @@ const char* mqttUser = MQTT_USER;
 const char* mqttPass = MQTT_PASSWORD;
 
 #define HOME_DEBUG 0
+#define USE_WIFI 0
 #define ESP8266 1
 #define EEPROM_SIZE 4096
 #define HC_ECHO 4       // пин Echo
@@ -67,7 +68,9 @@ ConnectionSettings settings(
 	"ardbeg/magiclamp"
 );
 
-ConnectionHelper helper(&settings);
+#if USE_WIFI
+  ConnectionHelper helper(&settings);
+#endif
 
 void print(string message)
 {
@@ -316,11 +319,15 @@ void setup() {
 
   applyMode();        // применить режим
 
+  #if USE_WIFI
   helper.setup();
+  #endif
 }
 
 void loop() {
+  #if USE_WIFI
   helper.handle();
+  #endif
 
   mem.tick();   // менеджер памяти
 
