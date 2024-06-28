@@ -24,6 +24,7 @@ const char* mqttPass = MQTT_PASSWORD;
 #define USE_WIFI 0
 #define ESP8266 1
 #define EEPROM_SIZE 4096
+#define LOCK_PIN 12     // пин закрытой крышки
 #define HC_ECHO 4       // пин Echo
 #define HC_TRIG 5       // пин Trig
 
@@ -56,7 +57,7 @@ Data data;
 EEManager mem(data, 10000);
 
 int prev_br;
-bool is_locked = false;
+byte is_locked = 2; // для эффекта закрывания крышки
 
 ConnectionSettings settings(
 	ssid,
@@ -342,12 +343,25 @@ void loop() {
     }
 
   // крышка закрыта
-  static uint32_t tmr_lock;
-  if (is_locked && (millis() - tmr_lock < 10000)){
-    return;
+  if (digitalRead(LOCK_PIN) == 0){
+    delay(50);
+    if (digitalRead(LOCK_PIN) == 0){
+      if (is_locked == 0) {
+        getFilterMedian(-1);
+        getFilterSkip(-1);
+        getFilterExp(-1);
+        gest.reset();
+        // эффект закрытой крышки
+        for (byte i = 0; i < 3; i++){
+        pulse();
+        delay(50);
+        }
+      }
+      is_locked = 1;
+      return;
+    }
   }
-  is_locked = false;
-  tmr_lock = millis();
+  is_locked = 0;
 
   // таймер 50мс, опрос датчика и вся основная логика
   static uint32_t tmr;
@@ -381,29 +395,6 @@ void loop() {
       ) 
       , false);
     #endif
-
-    // крышка закрыта
-    static uint8_t lock_count = 0;
-    if (dist_f && (dist_f < 60) && count >=3 && !gest.hold()){
-      lock_count++;
-      #if HOME_DEBUG
-        helper.sender.publish("test/magic-lamp/lock_count", lock_count, false);
-      #endif
-    }
-    else
-      lock_count = 0;
-    
-    if (lock_count >=5){
-      is_locked = true;
-      lock_count = 0;
-      getFilterMedian(-1);
-      getFilterSkip(-1);
-      getFilterExp(-1);
-      gest.reset();
-      #if HOME_DEBUG
-        helper.sender.publish("test/magic-lamp/is-locked", 1, false);
-      #endif
-    }
 
     gest.poll(count >= 3 && dist3);                      // расстояние > 0 - это клик
     
