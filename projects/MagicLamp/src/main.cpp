@@ -56,7 +56,7 @@ Data data;
 EEManager mem(data, 10000);
 
 int prev_br;
-byte is_locked = 2; // для эффекта закрывания крышки
+int8 is_locked = -1; // для эффекта закрывания крышки
 
 ConnectionSettings settings(
 	ssid,
@@ -329,9 +329,10 @@ void loop() {
   }
 
   // крышка закрыта
+  static uint32_t lock_tmr;
   if (digitalRead(LOCK_PIN) == 0){
-    delay(50);
-    if (digitalRead(LOCK_PIN) == 0){
+    if (millis() - lock_tmr >= 50) {
+      lock_tmr = millis();
       if (is_locked == 0) {
         getFilterMedian(-1);
         getFilterSkip(-1);
@@ -344,8 +345,14 @@ void loop() {
         }
       }
       is_locked = 1;
-      return;
     }
+    return;
+  } else if (is_locked == 1) {
+    if (millis() - lock_tmr >= 50) {
+      lock_tmr = millis();
+      is_locked = 0;
+    }
+    return;
   }
   is_locked = 0;
 
