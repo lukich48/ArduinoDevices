@@ -42,7 +42,6 @@ Adafruit_DotStar strip(LED_NUM, LED_DATA_PIN, LED_CLOCK_PIN, DOTSTAR_BRG);
 
 // структура настроек
 struct Data {
-  bool state = 1;     // 0 выкл, 1 вкл
   byte mode = 0;      // 0 цвет, 1 теплота, 2 огонь
   byte brightness = 120;  // яркость
   byte hue[4] = {0, 55, 50, 0};      // цвет    
@@ -167,46 +166,34 @@ void setBrightness(uint8_t value){
 
 #define BR_STEP 4
 void applyMode() {
-  if (data.state) {
-    if (data.mode < 2){ // актуально только для одноцветных режимов     
-      uint32_t color = strip.ColorHSV(data.hue[data.mode] * 257, data.sat[data.mode], 255);
-      color = strip.gamma32(color);
-      strip.fill(color, 0, 0);
+  if (data.mode < 2){ // актуально только для одноцветных режимов     
+    uint32_t color = strip.ColorHSV(data.hue[data.mode] * 257, data.sat[data.mode], 255);
+    color = strip.gamma32(color);
+    strip.fill(color, 0, 0);
 
-      // плавная смена яркости при ВКЛЮЧЕНИИ и СМЕНЕ РЕЖИМА
-      if (prev_br != data.brightness) {
-        int shift = prev_br > data.brightness ? -BR_STEP : BR_STEP;
-        while (abs(prev_br - data.brightness) > BR_STEP) {
-          prev_br += shift;
-          strip.setBrightness(prev_br);
-          strip.show();
-          delay(10);
-        }
-        prev_br = data.brightness;
-      }
-      else{
-        strip.setBrightness(data.brightness);
+    // плавная смена яркости при ВКЛЮЧЕНИИ и СМЕНЕ РЕЖИМА
+    if (prev_br != data.brightness) {
+      int shift = prev_br > data.brightness ? -BR_STEP : BR_STEP;
+      while (abs(prev_br - data.brightness) > BR_STEP) {
+        prev_br += shift;
+        strip.setBrightness(prev_br);
         strip.show();
+        delay(10);
       }
-    }
-    else{
       prev_br = data.brightness;
     }
-  } else {
-    // плавная смена яркости при ВЫКЛЮЧЕНИИ
-    while (prev_br > 0) {
-      prev_br -= BR_STEP;
-      if (prev_br < 0) prev_br = 0;
-      strip.setBrightness(prev_br);
+    else{
+      strip.setBrightness(data.brightness);
       strip.show();
-      delay(10);
     }
+  }
+  else{
+    prev_br = data.brightness;
   }
 
   #if HOME_DEBUG
     helper.sender.publish("test/magic-lamp/apply",
-    string("applyMode: ") + std::to_string(data.mode) 
-      + " state: " + std::to_string(data.state)
+    string("applyMode: ") + std::to_string(data.mode)
       + " hue: " + std::to_string(data.hue[data.mode])
       + " sat: " + std::to_string(data.sat[data.mode])
       + " bright: " + std::to_string(data.brightness)
@@ -332,15 +319,14 @@ void loop() {
 
   mem.tick();   // менеджер памяти
 
-  if (data.state)
-    switch (data.mode){
-      case 2:
-        fireTick();   // анимация огня
-        break;
-      case 3:
-        rainbow(); // радуга
-        break;
-    }
+  switch (data.mode){
+    case 2:
+      fireTick();   // анимация огня
+      break;
+    case 3:
+      rainbow(); // радуга
+      break;
+  }
 
   // крышка закрыта
   if (digitalRead(LOCK_PIN) == 0){
@@ -401,39 +387,35 @@ void loop() {
     // есть клики и прошло 2 секунды после настройки
     if (gest.hasClicks() && millis() - tout > 2000) {
       switch (gest.clicks) {
-        case 1:
-          data.state = !data.state;  // вкл/выкл
-          applyMode();
-          break;
         case 2:
           // если включена И меняем режим (0.. 1)
-          if (data.state && ++data.mode > 1) data.mode = 0;
+          if (++data.mode > 1) data.mode = 0;
           applyMode();
           break;
         case 3:
           // свеча
-          if (data.state) data.mode = 2;
+          data.mode = 2;
           break;
         case 4:
           // радуга
-          if (data.state) data.mode = 3;
+          data.mode = 3;
           break;
       }
       mem.update();
     }
 
     // клик
-    if (gest.click() && data.state) {
+    if (gest.click()) {
       pulse();  // мигнуть яркостью
     }
 
     // удержание (выполнится однократно)
-    if (gest.held() && data.state) {
+    if (gest.held()) {
       offset_d = dist_f;    // оффсет расстояния для дальнейшей настройки
     }
 
     // удержание (выполнится пока удерживается)
-    if (gest.hold() && data.state) {
+    if (gest.hold()) {
       tout = millis();
       // смещение текущей настройки как оффсет + (текущее расстояние - расстояние начала)
       uint8_t shift = 0;   
