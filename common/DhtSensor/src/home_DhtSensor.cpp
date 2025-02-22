@@ -62,7 +62,7 @@ void DhtSensor::sort(float a[])
 	float temp = 0;
 	for (int i = 0; i < bufCount; i++)
 	{
-		for (int j = 0; j < bufCount; j++)
+		for (int j = i; j < bufCount; j++)
 		{
 			if (a[i] > a[j])
 			{
